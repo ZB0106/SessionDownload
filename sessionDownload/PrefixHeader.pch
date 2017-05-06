@@ -1,0 +1,26 @@
+//
+//  PrefixHeader.pch
+//  downloadCeshi
+//
+//  Created by 瞄财网 on 2017/3/16.
+//  Copyright © 2017年 瞄财网. All rights reserved.
+//
+
+#ifndef PrefixHeader_pch
+#define PrefixHeader_pch
+
+#define RootDocumentPath NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES).firstObject
+#define RootTemp NSTemporaryDirectory()
+#define RootCache NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES).firstObject
+#define MCAplicationWillTerminate @"MCAplicationWillTerminate"
+
+#import "FileManageShare.h"
+#import "FMDB.h"
+
+
+
+#define HttpShare [HTTPSessionShare httpSessionShare]
+#define DBQueueShare [DatabaseQueueShare databaseQueueShare]
+
+
+#endif /* PrefixHeader_pch */

@@ -18,7 +18,7 @@
 
 @interface HTTPSessionShare ()<NSURLSessionDelegate,NSURLSessionDownloadDelegate>
 
-@property (nonatomic, strong) NSMutableArray *fileList;
+//@property (nonatomic, strong) NSMutableArray *fileList;
 @property (nonatomic, strong) NSOperationQueue *dowque;
 @property (nonatomic, strong) NSURLSession *backSession;
 @property (nonatomic, strong) NSMutableDictionary *taskDict;
@@ -77,7 +77,7 @@ static HTTPSessionShare *_share = nil;
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(sessionDownloadAplicationWillTerminate) name:MCAplicationWillTerminate object:nil];
         
         
-        _fileList = [NSMutableArray array];
+//        _fileList = [NSMutableArray array];
         
         _dowque = [[NSOperationQueue alloc] init];
         _dowque.maxConcurrentOperationCount = 1;
@@ -95,37 +95,19 @@ static HTTPSessionShare *_share = nil;
         
         ////session在每次重建时，会检查有没有没做完的任务，如果有session就会继续未完成的任务，这样很可能导致程序崩溃（在这个后台session里，每次意外退出app以后，再次重新创建后台session，都会默认开启上次崩溃前未执行完的任务，所以需要一个第三方的中介来对应一个任务,并且有次数限制
         //以下代码辅助处理异常退出的情况
-        [_backSession getAllTasksWithCompletionHandler:^(NSArray<__kindof NSURLSessionTask *> * _Nonnull tasks) {
-            for (NSURLSessionTask *task in tasks) {
-                if ([task isKindOfClass:[NSURLSessionDownloadTask class]]) {
-                    NSLog(@"%zd",task.state);
-                    NSURLSessionDownloadTask *downTask = (NSURLSessionDownloadTask *)task;
-                    [self addDelegateForDownloadTask:downTask progressBlock:nil destinationBlock:nil completedBlock:nil];
-                    
-                    [downTask cancelByProducingResumeData:^(NSData * _Nullable resumeData) {
-                        
-                        if (resumeData.length > 0) {
-                            NSDictionary *tmdict = getResumeDictionary(resumeData);
-                            FileModel *file = [FileModelDbManager getFileModeWithFilUrl:tmdict[@"NSURLSessionDownloadURL"]];
-                            if (file) {
-                                file.resumeData = [[NSString alloc] initWithData:resumeData encoding:NSUTF8StringEncoding];
-                                
-                                NSString *tmFileName = [NSString stringWithFormat:@"%@",[tmdict objectForKey:@"NSURLSessionResumeInfoTempFileName"]];
-                                file.tempFileName = tmFileName;
-                                file.tempPath = [[[FileManageShare fileManageShare] miaocaiRootTempCache] stringByAppendingPathComponent:file.tempFileName];
-                                NSError *error;
-                                [[NSFileManager defaultManager] moveItemAtPath:[RootTemp stringByAppendingPathComponent:file.tempFileName] toPath:file.tempPath error:&error];
-                                file.fileState = FileStopDownload;
-                                [FileModelDbManager updateFile:file];
-                                
-                            }
-                        }
-                        
-                        
-                    }];
-                    
-                }
+        [_backSession getTasksWithCompletionHandler:^(NSArray<NSURLSessionDataTask *> * _Nonnull dataTasks, NSArray<NSURLSessionUploadTask *> * _Nonnull uploadTasks, NSArray<NSURLSessionDownloadTask *> * _Nonnull downloadTasks) {
+            
+            for (NSURLSessionDownloadTask *task in downloadTasks) {
+                NSLog(@"%zd",task.state);
+                NSURLSessionDownloadTask *downTask = (NSURLSessionDownloadTask *)task;
+                [self addDelegateForDownloadTask:downTask progressBlock:nil destinationBlock:nil completedBlock:nil];
                 
+                [downTask cancelByProducingResumeData:^(NSData * _Nullable resumeData) {
+                    
+                    [self handleResumeData:resumeData file:nil];
+                    
+                    
+                }];
             }
         }];
 
@@ -151,17 +133,22 @@ static HTTPSessionShare *_share = nil;
             return;
         }
     }
-    [self.fileList addObject:model];
     [self.downloadingList addObject:model];
     [FileModelDbManager insertFile:model];
     [self startDownload];
 }
 
 
+- (void)downloadFileWithFileModelArray:(NSArray<FileModel*> *)modelArray
+{
+    for (FileModel *file in modelArray) {
+        [self downloadFileWithFileModel:file];
+    }
+}
 - (void)startDownload
 {
     [self handleDowningFile];
-    for (FileModel *file in self.fileList) {
+    for (FileModel *file in self.downloadingList) {
         if (file.fileState == FileDownloading) {
             NSURLSessionTask *task = [_taskDict objectForKey:file.fileUrl];
             if (!task) {
@@ -183,14 +170,14 @@ static HTTPSessionShare *_share = nil;
 - (void)handleDowningFile
 {
     [_temDowningList removeAllObjects];
-    for (FileModel *file in self.fileList) {
+    for (FileModel *file in self.downloadingList) {
         if (file.fileState == FileDownloading) {
             [_temDowningList addObject:file];
         }
         
     }
     if (_temDowningList.count < _maxCount) {
-        for (FileModel *file in _fileList) {
+        for (FileModel *file in _downloadingList) {
             if (file.fileState == FileWillDownload) {
                 file.fileState = FileDownloading;
                 [_temDowningList addObject:file];
@@ -216,7 +203,7 @@ static HTTPSessionShare *_share = nil;
     if (file.fileUrl.length == 0) {
         return;
     }
-    for (FileModel *tm in self.fileList) {
+    for (FileModel *tm in self.downloadingList) {
         if ([file.fileUrl isEqualToString:tm.fileUrl]) {
             tm.fileState = FileStopDownload;
             
@@ -236,27 +223,10 @@ static HTTPSessionShare *_share = nil;
         return;
     }
     
-    BOOL exsit = NO;
-    //查询下载列表中是否存在该文件
-    for (FileModel *tm in self.fileList) {
-        if ([tm.fileUrl isEqualToString:file.fileUrl]) {
-            exsit = YES;
-            break;
-        }
-    }
-    if (!exsit) {
-        [self.fileList insertObject:file atIndex:0];
-    }
-    
-    //重置文件的状态保证每次只有一个事downloading
-//    for (FileModel *tm in self.fileList) {
-//        if (tm.fileState == FileDownloading) {
-//            tm.fileState = FileWillDownload;
-//        }
-//    }
+
     __block NSInteger tmIdx = 0;
     
-    [self.fileList enumerateObjectsUsingBlock:^(FileModel *tm, NSUInteger idx, BOOL * _Nonnull stop) {
+    [self.downloadingList enumerateObjectsUsingBlock:^(FileModel *tm, NSUInteger idx, BOOL * _Nonnull stop) {
         if ([file.fileUrl isEqualToString:tm.fileUrl]) {
             tm.fileState = FileDownloading;
             tmIdx = idx;
@@ -265,8 +235,8 @@ static HTTPSessionShare *_share = nil;
 
     }];
     
-    [self.fileList removeObjectAtIndex:tmIdx];
-    [self.fileList insertObject:file atIndex:0];
+    [self.downloadingList removeObjectAtIndex:tmIdx];
+    [self.downloadingList insertObject:file atIndex:0];
 
     [self startDownload];
 }
@@ -405,13 +375,13 @@ static HTTPSessionShare *_share = nil;
         [[NSFileManager defaultManager] moveItemAtURL:location toURL:destPath error:nil];
         file.filePath = location.path;
         file.fileState = FileDownloaded;
-        NSLog(@"%@   %zd    %zd     %zd",destPath.path,self.downloadingList.count,self.fileList.count,self.diskFileList.count);
+        
         [self.downloadingList removeObject:file];
         [self.temDowningList removeObject:file];
         [self.diskFileList addObject:file];
-        [self.fileList removeObject:file];
+
         
-        NSLog(@"%zd    %zd     %zd",self.downloadingList.count,self.fileList.count,self.diskFileList.count);
+       
         [FileModelDbManager updateFile:file];
         
         
@@ -436,18 +406,7 @@ static HTTPSessionShare *_share = nil;
         if (error) {
             NSLog(@"%@",error);
             NSData *data = error.userInfo[NSURLSessionDownloadTaskResumeData];
-            if (data.length > 0) {
-                file.resumeData = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
-                
-                NSDictionary *tmdict = getResumeDictionary(error.userInfo[NSURLSessionDownloadTaskResumeData]);
-                NSString *tmFileName = [NSString stringWithFormat:@"%@",[tmdict objectForKey:@"NSURLSessionResumeInfoTempFileName"]];
-                file.tempFileName = tmFileName;
-                file.tempPath = [[[FileManageShare fileManageShare] miaocaiRootTempCache]  stringByAppendingPathComponent:file.tempFileName];
-                [[NSFileManager defaultManager] moveItemAtPath:[RootTemp stringByAppendingPathComponent:file.tempFileName] toPath:file.tempPath error:nil];
-                
-            }
-            file.fileState = FileStopDownload;
-            [FileModelDbManager updateFile:file];
+            [self handleResumeData:data file:file];
             
         }
         
@@ -507,35 +466,51 @@ static HTTPSessionShare *_share = nil;
     [self startDownload];
 }
 
-
+- (void)handleResumeData:(NSData *)resumeData file:(FileModel *)file
+{
+    if (resumeData.length > 0) {
+        
+        NSDictionary *tmdict = getResumeDictionary(resumeData);
+        if (!file) {
+            file = [FileModelDbManager getFileModeWithFilUrl:tmdict[@"NSURLSessionDownloadURL"]];
+        }
+        if (file) {
+            file.resumeData = [[NSString alloc] initWithData:resumeData encoding:NSUTF8StringEncoding];
+            
+            NSString *tmFileName = [NSString stringWithFormat:@"%@",[tmdict objectForKey:@"NSURLSessionResumeInfoTempFileName"]];
+            file.tempFileName = tmFileName;
+            file.tempPath = [[[FileManageShare fileManageShare] miaocaiRootTempCache] stringByAppendingPathComponent:file.tempFileName];
+            NSError *error;
+            [[NSFileManager defaultManager] moveItemAtPath:[RootTemp stringByAppendingPathComponent:file.tempFileName] toPath:file.tempPath error:&error];
+        }
+    }
+    
+    if (file) {
+        file.fileState = FileStopDownload;
+        [FileModelDbManager updateFile:file];
+    }
+}
 - (void)sessionDownloadAplicationWillTerminate
 {
     //程序意外退出时 保存断点信息
-    [_backSession getAllTasksWithCompletionHandler:^(NSArray<__kindof NSURLSessionTask *> * _Nonnull tasks) {
+    
+    [_backSession getTasksWithCompletionHandler:^(NSArray<NSURLSessionDataTask *> * _Nonnull dataTasks, NSArray<NSURLSessionUploadTask *> * _Nonnull uploadTasks, NSArray<NSURLSessionDownloadTask *> * _Nonnull downloadTasks) {
         
-        for (NSURLSessionDownloadTask *task in tasks) {
+        for (NSURLSessionDownloadTask *task in downloadTasks) {
+            NSLog(@"%zd",task.state);
+            NSURLSessionDownloadTask *downTask = (NSURLSessionDownloadTask *)task;
+            [self addDelegateForDownloadTask:downTask progressBlock:nil destinationBlock:nil completedBlock:nil];
             
-            [task cancelByProducingResumeData:^(NSData * _Nullable resumeData) {
+            [downTask cancelByProducingResumeData:^(NSData * _Nullable resumeData) {
+                
                 NSString *str = task.originalRequest.URL.absoluteString;
                 FileModel *file = [FileModelDbManager getFileModeWithFilUrl:str];
-                if (file) {
-                    if (resumeData.length > 0) {
-                        file.resumeData = [[NSString alloc] initWithData:resumeData encoding:NSUTF8StringEncoding];
-                        
-                        NSDictionary *tmdict = getResumeDictionary(resumeData);
-                        NSString *tmFileName = [NSString stringWithFormat:@"%@",[tmdict objectForKey:@"NSURLSessionResumeInfoTempFileName"]];
-                        file.tempFileName = tmFileName;
-                        file.tempPath = [[[FileManageShare fileManageShare] miaocaiRootTempCache]  stringByAppendingPathComponent:file.tempFileName];
-                        [[NSFileManager defaultManager] moveItemAtPath:[RootTemp stringByAppendingPathComponent:file.tempFileName] toPath:file.tempPath error:nil];
-                        
-                    }
-                    file.fileState = FileStopDownload;
-                    [FileModelDbManager updateFile:file];
-                }
+                [self handleResumeData:resumeData file:file];
+                
             }];
- 
         }
     }];
+
 }
 
 

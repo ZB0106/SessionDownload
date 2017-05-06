@@ -1,0 +1,2 @@
+# SessionDownload
+非常全面的使用session多任务断点下载demo,支持程序意外退出，支持后台断点下载

@@ -7,11 +7,12 @@
 ////
 //
 #import "SessionDownloadDelegate.h"
-#import "ZBProgress.h"
+#import "NSProgress+downSpeed.h"
 
 @interface SessionDownloadDelegate ()
 
-@property (nonatomic, strong) ZBProgress *progress;
+@property (nonatomic, strong) NSProgress *progress;
+@property (nonatomic ,strong) NSURL *destPath;
 //记录上一秒已经下载的数据的长度
 @property (nonatomic, assign) int64_t preCompleteBytes;
 @property (nonatomic, strong) NSTimer *timer;
@@ -25,7 +26,7 @@
 {
     self = [super init];
     if (self) {
-        _progress = [[ZBProgress alloc] init];
+        _progress = [[NSProgress alloc] init];
         _preCompleteBytes = 0;
         [self fire];
     }
@@ -36,7 +37,7 @@
 {
     self = [super init];
     if (self) {
-        _progress = [[ZBProgress alloc] init];
+        _progress = [[NSProgress alloc] init];
         _preCompleteBytes = 0;
         [self fire];
     }
@@ -62,7 +63,13 @@
     }
 
     if (self.destination) {
-         self.destination(location,downloadTask);
+        self.destPath = self.destination(location,downloadTask.response);
+        
+        if (self.destPath) {
+            NSError *fileManagerError = nil;
+            
+            [[NSFileManager defaultManager] moveItemAtURL:location toURL:self.destPath error:&fileManagerError];
+        }
     }
    
 }
@@ -70,18 +77,17 @@
 - (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task didCompleteWithError:(NSError *)error
 {
     if (self.completionHandler) {
-        self.completionHandler((NSURLSessionDownloadTask *)task,error);
+        self.completionHandler(task.response,error);
     }
     [self cancelTimer];
 }
 
 - (void)fire
 {
-    dispatch_async(dispatch_get_main_queue(), ^{
-        _timer = [NSTimer timerWithTimeInterval:1.0 target:self selector:@selector(updateProgress) userInfo:nil repeats:YES];
-        [[NSRunLoop mainRunLoop] addTimer:_timer forMode:NSRunLoopCommonModes];
-        [_timer fire];
-    });
+    _timer = [NSTimer timerWithTimeInterval:1.0 target:self selector:@selector(updateProgress) userInfo:nil repeats:YES];
+    [[NSRunLoop mainRunLoop] addTimer:_timer forMode:NSRunLoopCommonModes];
+    [_timer fire];
+
 }
 - (void)cancelTimer
 {
@@ -101,7 +107,7 @@
 //实时更新下载任务进度
 - (void)updateProgress
 {
-    self.progress.downSpeed = self.progress.completedUnitCount - self.preCompleteBytes;
+    self.progress.zb_downSpeed = self.progress.completedUnitCount - self.preCompleteBytes;
    
     self.preCompleteBytes = self.progress.completedUnitCount;
     if (self.downloadProgressBlock) {

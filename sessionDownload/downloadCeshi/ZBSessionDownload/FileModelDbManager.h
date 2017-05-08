@@ -26,8 +26,12 @@
 + (FileModel *)getFileModeWithFilUrl:(NSString *)fileUrl;
 
 //查询所有未下载完成的文件
++(NSArray *)getAllStopDownloadFile;
++(NSArray *)getAllDownloadingFile;
+
 + (NSArray *)getAllNotCompletedFile;
 //查询所有已经下载完成的文件
 + (NSArray *)getAllDownloadedFile;
 
++ (BOOL)updateUnFinishedFileState;
 @end

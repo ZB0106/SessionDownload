@@ -7,11 +7,13 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		04DE207A1EC0B8E600FD9746 /* ZB_NetWorkShare.m in Sources */ = {isa = PBXBuildFile; fileRef = 04DE20791EC0B8E600FD9746 /* ZB_NetWorkShare.m */; };
+		04DE207D1EC0C4F100FD9746 /* NSProgress+downSpeed.m in Sources */ = {isa = PBXBuildFile; fileRef = 04DE207C1EC0C4F100FD9746 /* NSProgress+downSpeed.m */; };
+		04DE20801EC0CA8200FD9746 /* ZBSessionDownloadManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 04DE207F1EC0CA8200FD9746 /* ZBSessionDownloadManager.m */; };
 		210F634A1E83C4DC0028B262 /* DatabaseQueueShare.m in Sources */ = {isa = PBXBuildFile; fileRef = 210F633F1E83C4DC0028B262 /* DatabaseQueueShare.m */; };
 		210F634B1E83C4DC0028B262 /* FileManageShare.m in Sources */ = {isa = PBXBuildFile; fileRef = 210F63411E83C4DC0028B262 /* FileManageShare.m */; };
 		210F634C1E83C4DC0028B262 /* FileModel.m in Sources */ = {isa = PBXBuildFile; fileRef = 210F63431E83C4DC0028B262 /* FileModel.m */; };
 		210F634D1E83C4DC0028B262 /* FileModelDbManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 210F63451E83C4DC0028B262 /* FileModelDbManager.m */; };
-		210F634E1E83C4DC0028B262 /* ZBProgress.m in Sources */ = {isa = PBXBuildFile; fileRef = 210F63471E83C4DC0028B262 /* ZBProgress.m */; };
 		210F634F1E83C4DC0028B262 /* NSString+Common.m in Sources */ = {isa = PBXBuildFile; fileRef = 210F63491E83C4DC0028B262 /* NSString+Common.m */; };
 		210F63531E83C57A0028B262 /* HTTPSessionShare.m in Sources */ = {isa = PBXBuildFile; fileRef = 210F63511E83C57A0028B262 /* HTTPSessionShare.m */; };
 		210F63551E83C5D50028B262 /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 210F63541E83C5D50028B262 /* Info.plist */; };
@@ -61,6 +63,12 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		04DE20781EC0B8E600FD9746 /* ZB_NetWorkShare.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ZB_NetWorkShare.h; path = ../ZB_NetWorkShare.h; sourceTree = "<group>"; };
+		04DE20791EC0B8E600FD9746 /* ZB_NetWorkShare.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = ZB_NetWorkShare.m; path = ../ZB_NetWorkShare.m; sourceTree = "<group>"; };
+		04DE207B1EC0C4F100FD9746 /* NSProgress+downSpeed.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSProgress+downSpeed.h"; sourceTree = "<group>"; };
+		04DE207C1EC0C4F100FD9746 /* NSProgress+downSpeed.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSProgress+downSpeed.m"; sourceTree = "<group>"; };
+		04DE207E1EC0CA8200FD9746 /* ZBSessionDownloadManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZBSessionDownloadManager.h; sourceTree = "<group>"; };
+		04DE207F1EC0CA8200FD9746 /* ZBSessionDownloadManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZBSessionDownloadManager.m; sourceTree = "<group>"; };
 		210F633E1E83C4DC0028B262 /* DatabaseQueueShare.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DatabaseQueueShare.h; sourceTree = "<group>"; };
 		210F633F1E83C4DC0028B262 /* DatabaseQueueShare.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DatabaseQueueShare.m; sourceTree = "<group>"; };
 		210F63401E83C4DC0028B262 /* FileManageShare.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FileManageShare.h; sourceTree = "<group>"; };
@@ -69,8 +77,6 @@
 		210F63431E83C4DC0028B262 /* FileModel.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FileModel.m; sourceTree = "<group>"; };
 		210F63441E83C4DC0028B262 /* FileModelDbManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FileModelDbManager.h; sourceTree = "<group>"; };
 		210F63451E83C4DC0028B262 /* FileModelDbManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FileModelDbManager.m; sourceTree = "<group>"; };
-		210F63461E83C4DC0028B262 /* ZBProgress.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZBProgress.h; sourceTree = "<group>"; };
-		210F63471E83C4DC0028B262 /* ZBProgress.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZBProgress.m; sourceTree = "<group>"; };
 		210F63481E83C4DC0028B262 /* NSString+Common.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSString+Common.h"; sourceTree = "<group>"; };
 		210F63491E83C4DC0028B262 /* NSString+Common.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSString+Common.m"; sourceTree = "<group>"; };
 		210F63501E83C57A0028B262 /* HTTPSessionShare.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = HTTPSessionShare.h; sourceTree = "<group>"; };
@@ -163,6 +169,8 @@
 		210F633D1E83C4DC0028B262 /* ZBSessionDownload */ = {
 			isa = PBXGroup;
 			children = (
+				04DE20781EC0B8E600FD9746 /* ZB_NetWorkShare.h */,
+				04DE20791EC0B8E600FD9746 /* ZB_NetWorkShare.m */,
 				210F63501E83C57A0028B262 /* HTTPSessionShare.h */,
 				210F63511E83C57A0028B262 /* HTTPSessionShare.m */,
 				210F63521E83C57A0028B262 /* HTTPSessionShareDelegate.h */,
@@ -174,13 +182,15 @@
 				210F63431E83C4DC0028B262 /* FileModel.m */,
 				210F63441E83C4DC0028B262 /* FileModelDbManager.h */,
 				210F63451E83C4DC0028B262 /* FileModelDbManager.m */,
-				210F63461E83C4DC0028B262 /* ZBProgress.h */,
-				210F63471E83C4DC0028B262 /* ZBProgress.m */,
 				210F63481E83C4DC0028B262 /* NSString+Common.h */,
 				210F63491E83C4DC0028B262 /* NSString+Common.m */,
 				210F63561E83C7F50028B262 /* C_common.h */,
 				ACA534391E86A6440034C8E6 /* SessionDownloadDelegate.h */,
 				ACA5343A1E86A6440034C8E6 /* SessionDownloadDelegate.m */,
+				04DE207B1EC0C4F100FD9746 /* NSProgress+downSpeed.h */,
+				04DE207C1EC0C4F100FD9746 /* NSProgress+downSpeed.m */,
+				04DE207E1EC0CA8200FD9746 /* ZBSessionDownloadManager.h */,
+				04DE207F1EC0CA8200FD9746 /* ZBSessionDownloadManager.m */,
 			);
 			path = ZBSessionDownload;
 			sourceTree = "<group>";
@@ -446,6 +456,8 @@
 				213E7BBE1E794A0B00F9B7E2 /* AppDelegate.m in Sources */,
 				213E7BF91E7953A400F9B7E2 /* DownLoadCell.m in Sources */,
 				212A99461E7A33C0002846A6 /* AFNetworkReachabilityManager.m in Sources */,
+				04DE20801EC0CA8200FD9746 /* ZBSessionDownloadManager.m in Sources */,
+				04DE207D1EC0C4F100FD9746 /* NSProgress+downSpeed.m in Sources */,
 				210F634F1E83C4DC0028B262 /* NSString+Common.m in Sources */,
 				210F634B1E83C4DC0028B262 /* FileManageShare.m in Sources */,
 				ACA5343B1E86A6440034C8E6 /* SessionDownloadDelegate.m in Sources */,
@@ -459,9 +471,9 @@
 				212A99491E7A33C0002846A6 /* AFURLResponseSerialization.m in Sources */,
 				212A99451E7A33C0002846A6 /* AFHTTPSessionManager.m in Sources */,
 				213E7BBB1E794A0B00F9B7E2 /* main.m in Sources */,
+				04DE207A1EC0B8E600FD9746 /* ZB_NetWorkShare.m in Sources */,
 				210F634A1E83C4DC0028B262 /* DatabaseQueueShare.m in Sources */,
 				213E7BF01E794E5400F9B7E2 /* ListTableViewController.m in Sources */,
-				210F634E1E83C4DC0028B262 /* ZBProgress.m in Sources */,
 				213E7BF61E79525800F9B7E2 /* ListCell.m in Sources */,
 				210F634C1E83C4DC0028B262 /* FileModel.m in Sources */,
 				213E7BF31E794E8900F9B7E2 /* DownloadTableViewController.m in Sources */,

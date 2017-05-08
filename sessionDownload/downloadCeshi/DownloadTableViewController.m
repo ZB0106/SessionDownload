@@ -23,19 +23,34 @@
 @implementation DownloadTableViewController
 
 - (void)viewDidLoad {
-    self.view.backgroundColor = [UIColor grayColor];
     [super viewDidLoad];
+    
+    self.view.backgroundColor = [UIColor grayColor];
     HttpShare.sessionDelegate = self;
     self.tableView.rowHeight = 100;
+    UIBarButtonItem *bar1 = [[UIBarButtonItem alloc] initWithTitle:@"全部开始" style:UIBarButtonItemStylePlain target:self action:@selector(startAll)];
+    
+    UIBarButtonItem *bar2 = [[UIBarButtonItem alloc] initWithTitle:@"全部暂停" style:UIBarButtonItemStylePlain target:self action:@selector(pauseAll)];
+    
+    self.navigationItem.rightBarButtonItems = [NSArray arrayWithObjects:bar1,bar2, nil];
 }
 
+- (void)startAll
+{
+    [HttpShare startAllTask];
+}
+
+- (void)pauseAll
+{
+    [HttpShare stopAllTask];
+}
 - (void)viewWillAppear:(BOOL)animated
 {
+    [super viewWillAppear:animated];
     [self initData];
 }
 - (void)initData
 {
-    
     self.downloadObjectArr = @[].mutableCopy;
     [self.downloadObjectArr addObjectsFromArray:HttpShare.diskFileList];
     [self.downloadObjectArr addObjectsFromArray:HttpShare.downloadingList];

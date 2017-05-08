@@ -155,7 +155,61 @@
 
 }
 
-+(NSArray *)getAllNotCompletedFile
++(NSArray *)getAllStopDownloadFile
+{
+    __block NSMutableArray *modelArray = [NSMutableArray array];
+    [DBQueueShare inDatabase:^(FMDatabase *db) {
+        FMResultSet *result = [db executeQuery:@"SELECT * FROM DOWNLOADFILE WHERE fileState = 2"];
+        if (result) {
+            while ([result next]) {
+                FileModel *model = [[FileModel alloc] init];
+                model.filePath = [result stringForColumn:@"LocalFilePath"];
+                model.fileSize = [result stringForColumn:@"FileSize"];
+                model.fileReceivedSize = [result stringForColumn:@"DownloadSize"];
+                model.fileName = [result stringForColumn:@"FileName"];
+                model.fileDownedTime = [result stringForColumn:@"CreateDate"];
+                model.fileState = [result intForColumn:@"fileState"];
+                model.fileUrl = [result stringForColumn:@"fileUrl"];
+                model.tempFileName = [result stringForColumn:@"tempFileName"];
+                model.tempPath = [result stringForColumn:@"tempPath"];
+                model.resumeData = [result stringForColumn:@"resumeData"];
+                [modelArray addObject:model];
+            }
+        }
+        [result close];
+    }];
+    return modelArray;
+
+}
+
++(NSArray *)getAllDownloadingFile
+{
+    __block NSMutableArray *modelArray = [NSMutableArray array];
+    [DBQueueShare inDatabase:^(FMDatabase *db) {
+        FMResultSet *result = [db executeQuery:@"SELECT * FROM DOWNLOADFILE WHERE fileState = 0 OR fileState = 1"];
+        if (result) {
+            while ([result next]) {
+                FileModel *model = [[FileModel alloc] init];
+                model.filePath = [result stringForColumn:@"LocalFilePath"];
+                model.fileSize = [result stringForColumn:@"FileSize"];
+                model.fileReceivedSize = [result stringForColumn:@"DownloadSize"];
+                model.fileName = [result stringForColumn:@"FileName"];
+                model.fileDownedTime = [result stringForColumn:@"CreateDate"];
+                model.fileState = [result intForColumn:@"fileState"];
+                model.fileUrl = [result stringForColumn:@"fileUrl"];
+                model.tempFileName = [result stringForColumn:@"tempFileName"];
+                model.tempPath = [result stringForColumn:@"tempPath"];
+                model.resumeData = [result stringForColumn:@"resumeData"];
+                [modelArray addObject:model];
+            }
+        }
+        [result close];
+    }];
+    return modelArray;
+    
+}
+
++ (NSArray *)getAllNotCompletedFile
 {
     __block NSMutableArray *modelArray = [NSMutableArray array];
     [DBQueueShare inDatabase:^(FMDatabase *db) {
@@ -179,6 +233,17 @@
         [result close];
     }];
     return modelArray;
+}
+
++ (BOOL)updateUnFinishedFileState
+{
+    __block BOOL ret = NO;
+    [DBQueueShare inDatabase:^(FMDatabase *db) {
+        ret = [db executeUpdate:@"UPDATE DOWNLOADFILE SET fileState = 2 WHERE fileState = 0 OR fileState = 1"];
+        
+    }];
+    return ret;
 
 }
+
 @end

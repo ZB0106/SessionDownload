@@ -7,15 +7,14 @@
 //
 
 #import <Foundation/Foundation.h>
-@class ZBProgress;
 
 @interface SessionDownloadDelegate : NSObject
 
 - (instancetype)initWithTask:(NSURLSessionDownloadTask *)task;
 
-@property (nonatomic, copy) void (^downloadProgressBlock)(ZBProgress *progress);
-@property (nonatomic, copy) NSURL *(^destination)(NSURL *location, NSURLSessionDownloadTask *downloadTask);
-@property (nonatomic, copy) void (^completionHandler)(NSURLSessionDownloadTask *downloadTask, NSError *error);
+@property (nonatomic, copy) void (^downloadProgressBlock)(NSProgress *progress);
+@property (nonatomic, copy) NSURL *(^destination)(NSURL *location, NSURLResponse *downloadTask);
+@property (nonatomic, copy) void (^completionHandler)(NSURLResponse *downloadTask, NSError *error);
 
 - (void)URLSession:(NSURLSession *)session downloadTask:(NSURLSessionDownloadTask *)downloadTask
 didFinishDownloadingToURL:(NSURL *)location;

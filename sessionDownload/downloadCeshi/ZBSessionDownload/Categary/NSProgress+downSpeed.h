@@ -10,7 +10,8 @@
 
 @interface NSProgress (downSpeed)
 
-@property (nonatomic, assign) float zb_downSpeed;
+//speed不能使用double或者float，否则会奔溃
+@property (nonatomic, assign) int64_t zb_downSpeed;
 @property (nonatomic, assign) int64_t zb_preBytes;
 @property (nonatomic, strong) NSDate *zb_startDate;
 

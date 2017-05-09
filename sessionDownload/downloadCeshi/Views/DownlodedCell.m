@@ -8,6 +8,7 @@
 
 #import "DownlodedCell.h"
 #import "FileModel.h"
+#import "NSString+Common.h"
 
 @implementation DownlodedCell
 
@@ -25,6 +26,6 @@
 {
     _flModel = flModel;
     self.fileNameLabel.text = flModel.fileName;
-    self.imageView.image = [UIImage imageWithContentsOfFile:flModel.filePath];
+    self.sizeLabel.text = [NSString stringWithFormat:@"%@/%@",[NSString getFileSizeString:flModel.fileReceivedSize.longLongValue],[NSString getFileSizeString:flModel.fileSize.longLongValue]];
 }
 @end

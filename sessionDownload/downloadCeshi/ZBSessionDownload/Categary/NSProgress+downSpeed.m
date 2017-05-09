@@ -16,14 +16,14 @@ static char zb_startDate;
 
 @implementation NSProgress (downSpeed)
 
-- (float)zb_downSpeed
+- (int64_t)zb_downSpeed
 {
-    return [objc_getAssociatedObject(self, _cmd) floatValue];
+    return [objc_getAssociatedObject(self, _cmd) longLongValue];
 }
 
-- (void)setZb_downSpeed:(float)zb_downSpeed
+- (void)setZb_downSpeed:(int64_t)zb_downSpeed
 {
-    objc_setAssociatedObject(self, @selector(zb_downSpeed), [NSNumber numberWithFloat:zb_downSpeed], OBJC_ASSOCIATION_ASSIGN);
+    objc_setAssociatedObject(self, @selector(zb_downSpeed), [NSNumber numberWithLongLong:zb_downSpeed], OBJC_ASSOCIATION_ASSIGN);
 }
 
 - (int64_t)zb_preBytes

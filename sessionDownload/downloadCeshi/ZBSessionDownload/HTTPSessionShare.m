@@ -390,9 +390,12 @@ static HTTPSessionShare *_share = nil;
 - (NSURL *)addDownloadDestinationBlockWithLocation:(NSURL *)location downloadTask:(NSURLResponse *)downloadTask file:(FileModel *)file
 {
     NSURL *destPath = [NSURL fileURLWithPath:[RootCache stringByAppendingPathComponent:downloadTask.suggestedFilename]];
-    [[NSFileManager defaultManager] moveItemAtURL:location toURL:destPath error:nil];
+    NSData *data = [[NSFileManager defaultManager] contentsAtPath:location.path];
     file.filePath = destPath.path;
     file.fileState = FileDownloaded;
+    //下载完成时需要设置文件的大小，因为设置了每隔1s更新一次，最后一次有可能会没有更新
+    file.fileReceivedSize = [NSString stringWithFormat:@"%@",@(data.length)];
+    file.fileSize = [NSString stringWithFormat:@"%@",@(data.length)];
     
     [self.downloadingList removeObject:file];
     [self.temDowningList removeObject:file];
@@ -422,7 +425,6 @@ static HTTPSessionShare *_share = nil;
         [self handleResumeData:data file:file];
         
     }
-    
     [self removeTaskForKey:file.fileUrl];
     [self startDownload];
     dispatch_async(dispatch_get_main_queue(), ^{
@@ -453,6 +455,8 @@ static HTTPSessionShare *_share = nil;
             NSString *tmFileName = [NSString stringWithFormat:@"%@",[tmdict objectForKey:@"NSURLSessionResumeInfoTempFileName"]];
             file.tempFileName = tmFileName;
             file.tempPath = [[[FileManageShare fileManageShare] miaocaiRootTempCache] stringByAppendingPathComponent:file.tempFileName];
+            NSData *data = [[NSFileManager defaultManager] contentsAtPath:[RootTemp stringByAppendingPathComponent:file.tempFileName]];
+            file.fileReceivedSize = [NSString stringWithFormat:@"%@",@(data.length)];
             NSError *error;
             [[NSFileManager defaultManager] moveItemAtPath:[RootTemp stringByAppendingPathComponent:file.tempFileName] toPath:file.tempPath error:&error];
         }

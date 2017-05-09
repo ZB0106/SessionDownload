@@ -149,7 +149,8 @@ static ZB_NetWorkShare *_instance;
     NSDate *cur = [NSDate date];
     NSTimeInterval time = [cur timeIntervalSinceDate:downloadProgress.zb_startDate];
     if (time >= 1.0) {
-        downloadProgress.zb_downSpeed = (downloadProgress.completedUnitCount - downloadProgress.zb_preBytes)/time;
+        
+        downloadProgress.zb_downSpeed = (downloadProgress.completedUnitCount - downloadProgress.zb_preBytes) / time;
         
         downloadProgress.zb_startDate = cur;
         downloadProgress.zb_preBytes = downloadProgress.completedUnitCount;

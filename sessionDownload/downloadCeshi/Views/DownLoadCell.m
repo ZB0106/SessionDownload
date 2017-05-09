@@ -44,6 +44,8 @@
         self.progress.progress = 0.0;
     }
     
+    self.progressLabel.text = [NSString stringWithFormat:@"%@/%@",[NSString getFileSizeString:flModel.fileReceivedSize.longLongValue],[NSString getFileSizeString:flModel.fileSize.longLongValue]];
+    
     if (flModel.fileState == FileDownloading) {
         self.downloadBtn.selected = YES;
         self.speedLabel.text = flModel.fileDownSpeed;

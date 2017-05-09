@@ -146,11 +146,6 @@
 		210F633D1E83C4DC0028B262 /* ZBSessionDownload */ = {
 			isa = PBXGroup;
 			children = (
-				21AD9BAB1EC152370007CDCD /* AFNetDownload */,
-				21AD9BAE1EC152370007CDCD /* Categary */,
-				21AD9BB31EC152370007CDCD /* Common */,
-				21AD9BB51EC152370007CDCD /* CustomDownload */,
-				21AD9BBA1EC152370007CDCD /* DataBase */,
 				21AD9BA11EC152260007CDCD /* FileManageShare.h */,
 				21AD9BA21EC152260007CDCD /* FileManageShare.m */,
 				21AD9BA31EC152260007CDCD /* FileModel.h */,
@@ -158,6 +153,11 @@
 				21AD9BA51EC152260007CDCD /* HTTPSessionShare.h */,
 				21AD9BA61EC152260007CDCD /* HTTPSessionShare.m */,
 				21AD9BA71EC152260007CDCD /* HTTPSessionShareDelegate.h */,
+				21AD9BAB1EC152370007CDCD /* AFNetDownload */,
+				21AD9BAE1EC152370007CDCD /* Categary */,
+				21AD9BB31EC152370007CDCD /* Common */,
+				21AD9BB51EC152370007CDCD /* CustomDownload */,
+				21AD9BBA1EC152370007CDCD /* DataBase */,
 			);
 			path = ZBSessionDownload;
 			sourceTree = "<group>";

@@ -11,5 +11,7 @@
 @interface NSProgress (downSpeed)
 
 @property (nonatomic, assign) float zb_downSpeed;
+@property (nonatomic, assign) int64_t zb_preBytes;
+@property (nonatomic, strong) NSDate *zb_startDate;
 
 @end

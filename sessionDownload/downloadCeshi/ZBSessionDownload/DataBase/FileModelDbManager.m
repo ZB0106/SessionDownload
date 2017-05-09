@@ -21,7 +21,12 @@
     
     __block BOOL ret = NO;
     [DBQueueShare inDatabase:^(FMDatabase *db) {
-        ret = [db executeUpdate:@"INSERT INTO DOWNLOADFILE(LocalFilePath, FileSize, DownloadSize, FileName, fileUrl, CreateDate, fileState,tempFileName,tempPath,resumeData) VALUES (?,?,?,?,?,?,?,?,?,?)",fileModel.filePath,fileModel.fileSize,fileModel.fileReceivedSize,fileModel.fileName,fileModel.fileUrl,fileModel.fileDownedTime,@(fileModel.fileState),fileModel.tempFileName,fileModel.tempPath,fileModel.resumeData];
+        NSString *url = [db stringForQuery:@"SELECT fileUrl FROM DOWNLOADFILE WHERE fileUrl = ?",fileModel.fileUrl];
+        if (url) {
+            ret = [db executeUpdate:@"UPDATE DOWNLOADFILE SET LocalFilePath = ?,  FileName = ?, CreateDate = ?, fileState = ?, tempFileName = ?, tempPath = ?, resumeData = ?, FileSize = ?, DownloadSize = ? WHERE fileUrl = ?",fileModel.filePath,fileModel.fileName,fileModel.fileDownedTime,@(fileModel.fileState),fileModel.tempFileName,fileModel.tempPath,fileModel.resumeData,fileModel.fileSize,fileModel.fileReceivedSize,fileModel.fileUrl];
+        } else {
+            ret = [db executeUpdate:@"INSERT INTO DOWNLOADFILE(LocalFilePath, FileSize, DownloadSize, FileName, fileUrl, CreateDate, fileState,tempFileName,tempPath,resumeData) VALUES (?,?,?,?,?,?,?,?,?,?)",fileModel.filePath,fileModel.fileSize,fileModel.fileReceivedSize,fileModel.fileName,fileModel.fileUrl,fileModel.fileDownedTime,@(fileModel.fileState),fileModel.tempFileName,fileModel.tempPath,fileModel.resumeData];
+        }
     }];
     return ret;
 }
@@ -34,7 +39,14 @@
     __block BOOL ret = NO;
     [DBQueueShare inTransaction:^(FMDatabase *db, BOOL *rollback) {
         for (FileModel *fileModel in fileList) {
-            ret = [db executeUpdate:@"INSERT INTO DOWNLOADFILE(LocalFilePath, FileSize, DownloadSize, FileName, fileUrl, CreateDate, fileState,tempFileName,tempPath,resumeData) VALUES (?,?,?,?,?,?,?,?,?,?)",fileModel.filePath,fileModel.fileSize,fileModel.fileReceivedSize,fileModel.fileName,fileModel.fileUrl,fileModel.fileDownedTime,@(fileModel.fileState),fileModel.tempFileName,fileModel.tempPath,fileModel.resumeData];
+            
+            NSString *url = [db stringForQuery:@"SELECT fileUrl FROM DOWNLOADFILE WHERE fileUrl = ?",fileModel.fileUrl];
+            if (url) {
+                ret = [db executeUpdate:@"UPDATE DOWNLOADFILE SET LocalFilePath = ?,  FileName = ?, CreateDate = ?, fileState = ?, tempFileName = ?, tempPath = ?, resumeData = ?, FileSize = ?, DownloadSize = ? WHERE fileUrl = ?",fileModel.filePath,fileModel.fileName,fileModel.fileDownedTime,@(fileModel.fileState),fileModel.tempFileName,fileModel.tempPath,fileModel.resumeData,fileModel.fileSize,fileModel.fileReceivedSize,fileModel.fileUrl];
+            } else {
+                 ret = [db executeUpdate:@"INSERT INTO DOWNLOADFILE(LocalFilePath, FileSize, DownloadSize, FileName, fileUrl, CreateDate, fileState,tempFileName,tempPath,resumeData) VALUES (?,?,?,?,?,?,?,?,?,?)",fileModel.filePath,fileModel.fileSize,fileModel.fileReceivedSize,fileModel.fileName,fileModel.fileUrl,fileModel.fileDownedTime,@(fileModel.fileState),fileModel.tempFileName,fileModel.tempPath,fileModel.resumeData];
+            }
+
             if (!ret) {
                 *rollback = YES;
                 break;
@@ -65,7 +77,7 @@
     {
         return NO;
     }
-    //    FMDatabaseQueue *queen = [FMDatabaseQueue  databaseQueueWithPath:[[CFolderMgr shareInstance] personalDatabasePathRecently]];
+   
     __block BOOL ret = NO;
     [DBQueueShare inDatabase:^(FMDatabase *db) {
          ret = [db executeUpdate:@"UPDATE DOWNLOADFILE SET LocalFilePath = ?,  FileName = ?, CreateDate = ?, fileState = ?, tempFileName = ?, tempPath = ?, resumeData = ?, FileSize = ?, DownloadSize = ? WHERE fileUrl = ?",fileModel.filePath,fileModel.fileName,fileModel.fileDownedTime,@(fileModel.fileState),fileModel.tempFileName,fileModel.tempPath,fileModel.resumeData,fileModel.fileSize,fileModel.fileReceivedSize,fileModel.fileUrl];
@@ -84,21 +96,29 @@
         FMResultSet *result = [db executeQuery:@"SELECT *FROM DOWNLOADFILE WHERE fileUrl = ?",fileUrl];
         if (result != nil) {
             while ([result next]) {
-                model = [[FileModel alloc] init];
-                model.filePath = [result stringForColumn:@"LocalFilePath"];
-                model.fileSize = [result stringForColumn:@"FileSize"];
-                model.fileReceivedSize = [result stringForColumn:@"DownloadSize"];
-                model.fileName = [result stringForColumn:@"FileName"];
-                model.fileDownedTime = [result stringForColumn:@"CreateDate"];
-                model.fileState = [result intForColumn:@"fileState"];
-                model.tempFileName = [result stringForColumn:@"tempFileName"];
-                model.tempPath = [result stringForColumn:@"tempPath"];
-                model.resumeData = [result stringForColumn:@"resumeData"];
-                model.fileUrl = fileUrl;
+                model = [FileModelDbManager fileModelWithResult:result];
             }
         }
         [result close];
     }];
+    return model;
+}
+
++ (FileModel *)fileModelWithResult:(FMResultSet *)result
+{
+    FileModel *model = [[FileModel alloc] init];
+    
+    model.filePath = [result stringForColumn:@"LocalFilePath"];
+    model.fileSize = [result stringForColumn:@"FileSize"];
+    model.fileReceivedSize = [result stringForColumn:@"DownloadSize"];
+    model.fileName = [result stringForColumn:@"FileName"];
+    model.fileDownedTime = [result stringForColumn:@"CreateDate"];
+    model.fileState = [result intForColumn:@"fileState"];
+    model.tempFileName = [result stringForColumn:@"tempFileName"];
+    model.tempPath = [result stringForColumn:@"tempPath"];
+    model.resumeData = [result stringForColumn:@"resumeData"];
+    model.fileUrl = [result stringForColumn:@"fileUrl"];
+    
     return model;
 }
 
@@ -109,17 +129,7 @@
        FMResultSet *result = [db executeQuery:@"SELECT * FROM DOWNLOADFILE"];
         if (result) {
             while ([result next]) {
-                FileModel *model = [[FileModel alloc] init];
-                model.filePath = [result stringForColumn:@"LocalFilePath"];
-                model.fileSize = [result stringForColumn:@"FileSize"];
-                model.fileReceivedSize = [result stringForColumn:@"DownloadSize"];
-                model.fileName = [result stringForColumn:@"FileName"];
-                model.fileDownedTime = [result stringForColumn:@"CreateDate"];
-                model.fileState = [result intForColumn:@"fileState"];
-                model.fileUrl = [result stringForColumn:@"fileUrl"];
-                model.tempFileName = [result stringForColumn:@"tempFileName"];
-                model.tempPath = [result stringForColumn:@"tempPath"];
-                model.resumeData = [result stringForColumn:@"resumeData"];
+                FileModel *model = [FileModelDbManager fileModelWithResult:result];
                 [modelArray addObject:model];
             }
         }
@@ -135,17 +145,7 @@
         FMResultSet *result = [db executeQuery:@"SELECT * FROM DOWNLOADFILE WHERE fileState = 3"];
         if (result) {
             while ([result next]) {
-                FileModel *model = [[FileModel alloc] init];
-                model.filePath = [result stringForColumn:@"LocalFilePath"];
-                model.fileSize = [result stringForColumn:@"FileSize"];
-                model.fileReceivedSize = [result stringForColumn:@"DownloadSize"];
-                model.fileName = [result stringForColumn:@"FileName"];
-                model.fileDownedTime = [result stringForColumn:@"CreateDate"];
-                model.fileState = [result intForColumn:@"fileState"];
-                model.fileUrl = [result stringForColumn:@"fileUrl"];
-                model.tempFileName = [result stringForColumn:@"tempFileName"];
-                model.tempPath = [result stringForColumn:@"tempPath"];
-                model.resumeData = [result stringForColumn:@"resumeData"];
+                FileModel *model = [FileModelDbManager fileModelWithResult:result];
                 [modelArray addObject:model];
             }
         }
@@ -162,17 +162,7 @@
         FMResultSet *result = [db executeQuery:@"SELECT * FROM DOWNLOADFILE WHERE fileState = 2"];
         if (result) {
             while ([result next]) {
-                FileModel *model = [[FileModel alloc] init];
-                model.filePath = [result stringForColumn:@"LocalFilePath"];
-                model.fileSize = [result stringForColumn:@"FileSize"];
-                model.fileReceivedSize = [result stringForColumn:@"DownloadSize"];
-                model.fileName = [result stringForColumn:@"FileName"];
-                model.fileDownedTime = [result stringForColumn:@"CreateDate"];
-                model.fileState = [result intForColumn:@"fileState"];
-                model.fileUrl = [result stringForColumn:@"fileUrl"];
-                model.tempFileName = [result stringForColumn:@"tempFileName"];
-                model.tempPath = [result stringForColumn:@"tempPath"];
-                model.resumeData = [result stringForColumn:@"resumeData"];
+                FileModel *model = [FileModelDbManager fileModelWithResult:result];
                 [modelArray addObject:model];
             }
         }
@@ -189,17 +179,7 @@
         FMResultSet *result = [db executeQuery:@"SELECT * FROM DOWNLOADFILE WHERE fileState = 0 OR fileState = 1"];
         if (result) {
             while ([result next]) {
-                FileModel *model = [[FileModel alloc] init];
-                model.filePath = [result stringForColumn:@"LocalFilePath"];
-                model.fileSize = [result stringForColumn:@"FileSize"];
-                model.fileReceivedSize = [result stringForColumn:@"DownloadSize"];
-                model.fileName = [result stringForColumn:@"FileName"];
-                model.fileDownedTime = [result stringForColumn:@"CreateDate"];
-                model.fileState = [result intForColumn:@"fileState"];
-                model.fileUrl = [result stringForColumn:@"fileUrl"];
-                model.tempFileName = [result stringForColumn:@"tempFileName"];
-                model.tempPath = [result stringForColumn:@"tempPath"];
-                model.resumeData = [result stringForColumn:@"resumeData"];
+                FileModel *model = [FileModelDbManager fileModelWithResult:result];
                 [modelArray addObject:model];
             }
         }
@@ -216,17 +196,7 @@
         FMResultSet *result = [db executeQuery:@"SELECT * FROM DOWNLOADFILE WHERE fileState <> 3"];
         if (result) {
             while ([result next]) {
-                FileModel *model = [[FileModel alloc] init];
-                model.filePath = [result stringForColumn:@"LocalFilePath"];
-                model.fileSize = [result stringForColumn:@"FileSize"];
-                model.fileReceivedSize = [result stringForColumn:@"DownloadSize"];
-                model.fileName = [result stringForColumn:@"FileName"];
-                model.fileDownedTime = [result stringForColumn:@"CreateDate"];
-                model.fileState = [result intForColumn:@"fileState"];
-                model.fileUrl = [result stringForColumn:@"fileUrl"];
-                model.tempFileName = [result stringForColumn:@"tempFileName"];
-                model.tempPath = [result stringForColumn:@"tempPath"];
-                model.resumeData = [result stringForColumn:@"resumeData"];
+                FileModel *model = [FileModelDbManager fileModelWithResult:result];
                 [modelArray addObject:model];
             }
         }

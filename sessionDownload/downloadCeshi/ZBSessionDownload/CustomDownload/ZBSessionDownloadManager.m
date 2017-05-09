@@ -71,6 +71,10 @@ static ZBSessionDownloadManager *_instance;
         _dowque.maxConcurrentOperationCount = 1;
         _backSession = [self backgroundURLSession];
         _delgateForTaskDict = [NSMutableDictionary dictionary];
+        
+        _lock = [[NSLock alloc] init];
+        _lock.name = @"ZBHTTPSessionShareCustomDelegate";
+
     }
     return self;
 }

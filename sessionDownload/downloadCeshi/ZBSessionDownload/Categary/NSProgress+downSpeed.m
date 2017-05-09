@@ -9,15 +9,42 @@
 #import "NSProgress+downSpeed.h"
 #import <objc/runtime.h>
 
+static char zb_downSpeed;
+static char zb_preBytes;
+static char zb_startDate;
+
+
 @implementation NSProgress (downSpeed)
 
 - (float)zb_downSpeed
 {
-    return [objc_getAssociatedObject(self, @selector(zb_downSpeed)) floatValue];
+    return [objc_getAssociatedObject(self, _cmd) floatValue];
 }
 
 - (void)setZb_downSpeed:(float)zb_downSpeed
 {
     objc_setAssociatedObject(self, @selector(zb_downSpeed), [NSNumber numberWithFloat:zb_downSpeed], OBJC_ASSOCIATION_ASSIGN);
 }
+
+- (int64_t)zb_preBytes
+{
+    return [objc_getAssociatedObject(self, _cmd) longLongValue];
+}
+
+- (void)setZb_preBytes:(int64_t)zb_preBytes
+{
+    objc_setAssociatedObject(self, @selector(zb_preBytes), [NSNumber numberWithLongLong:zb_preBytes], OBJC_ASSOCIATION_ASSIGN);
+}
+
+
+- (NSDate *)zb_startDate
+{
+    return objc_getAssociatedObject(self, _cmd);
+}
+
+- (void)setZb_startDate:(NSDate *)zb_startDate
+{
+    objc_setAssociatedObject(self, @selector(zb_startDate), zb_startDate, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
+
 @end

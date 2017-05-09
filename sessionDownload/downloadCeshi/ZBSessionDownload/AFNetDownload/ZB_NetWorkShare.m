@@ -7,12 +7,13 @@
 //
 
 #import "ZB_NetWorkShare.h"
-
+#import "NSProgress+downSpeed.h"
 
 @interface ZB_NetWorkShare ()
 
 @property (nonatomic, strong) AFHTTPSessionManager *backSessionManager;
 @property (nonatomic, strong) AFNetworkReachabilityManager *reachManager;
+
 
 @end
 
@@ -61,6 +62,8 @@ static ZB_NetWorkShare *_instance;
         //网络监听
         _reachManager = [AFNetworkReachabilityManager manager];
         
+        [self startMonitoring];
+        
         //设置全局的baseUrl
         
     }
@@ -69,15 +72,33 @@ static ZB_NetWorkShare *_instance;
 
 - (void)startMonitoring
 {
-    
-    [_reachManager setReachabilityStatusChangeBlock:^(AFNetworkReachabilityStatus status) {
-        NSLog(@"%zd",status);
-    }];
-    
     dispatch_sync(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
         
         [_reachManager startMonitoring];
     });
+}
+
+- (void)checkNetWorking
+{
+    [_reachManager setReachabilityStatusChangeBlock:^(AFNetworkReachabilityStatus status) {
+        NSLog(@"%zd",status);
+        switch (status) {
+            case AFNetworkReachabilityStatusReachableViaWiFi:
+                
+                break;
+            case AFNetworkReachabilityStatusReachableViaWWAN:
+                
+                break;
+            case AFNetworkReachabilityStatusNotReachable:
+                
+                break;
+            default:
+                
+                break;
+        }
+        
+    }];
+
 }
 
 - (NSURLSessionDownloadTask *)downloadTaskWithUrlStr:(NSString *)urlStr
@@ -85,6 +106,7 @@ static ZB_NetWorkShare *_instance;
                                           destination:(nullable NSURL * (^)(NSURL *targetPath, NSURLResponse *response))destination
                                     completionHandler:(nullable void (^)(NSURLResponse *response, NSURL * _Nullable filePath, NSError * _Nullable error))completionHandler
 {
+    
     NSError *serializationError = nil;
     NSMutableURLRequest *request = [self.backSessionManager.requestSerializer requestWithMethod:@"GET" URLString:[[NSURL URLWithString:urlStr relativeToURL:nil] absoluteString] parameters:nil error:&serializationError];
     if (serializationError) {
@@ -96,8 +118,12 @@ static ZB_NetWorkShare *_instance;
         
         return nil;
     }
-
-    return [self.backSessionManager downloadTaskWithRequest:request progress:downloadProgressBlock destination:destination completionHandler:completionHandler];
+    __weak typeof(self) weakSelf = self;
+    return [self.backSessionManager downloadTaskWithRequest:request progress:^(NSProgress * _Nonnull downloadProgress) {
+        __strong typeof(weakSelf) strongSelf = weakSelf;
+        [strongSelf updateProgress:downloadProgress downloadBlock:downloadProgressBlock];
+        
+    } destination:destination completionHandler:completionHandler];
 }
 
 - (NSURLSessionDownloadTask *)downloadTaskWithResumeData:(NSData *)resumeData
@@ -105,7 +131,33 @@ static ZB_NetWorkShare *_instance;
                                              destination:(nullable NSURL * (^)(NSURL *targetPath, NSURLResponse *response))destination
                                        completionHandler:(nullable void (^)(NSURLResponse *response, NSURL * _Nullable filePath, NSError * _Nullable error))completionHandler
 {
-    return [self.backSessionManager downloadTaskWithResumeData:resumeData progress:downloadProgressBlock destination:destination completionHandler:completionHandler];
+    
+    __weak typeof(self) weakSelf = self;
+    return [self.backSessionManager downloadTaskWithResumeData:resumeData progress:^(NSProgress * _Nonnull downloadProgress) {
+        __strong typeof(weakSelf) strongSelf = weakSelf;
+        [strongSelf updateProgress:downloadProgress downloadBlock:downloadProgressBlock];
+        
+    } destination:destination completionHandler:completionHandler];
+}
+
+- (void)updateProgress:(NSProgress *)downloadProgress downloadBlock:(void (^)(NSProgress *))downloadProgressBlock
+{
+    if (!downloadProgress.zb_startDate) {
+        downloadProgress.zb_startDate = [NSDate date];
+        downloadProgress.zb_preBytes = downloadProgress.completedUnitCount;
+    }
+    NSDate *cur = [NSDate date];
+    NSTimeInterval time = [cur timeIntervalSinceDate:downloadProgress.zb_startDate];
+    if (time >= 1.0) {
+        downloadProgress.zb_downSpeed = (downloadProgress.completedUnitCount - downloadProgress.zb_preBytes)/time;
+        
+        downloadProgress.zb_startDate = cur;
+        downloadProgress.zb_preBytes = downloadProgress.completedUnitCount;
+        
+        if (downloadProgressBlock) {
+            downloadProgressBlock(downloadProgress);
+        }
+    }
 }
 
 

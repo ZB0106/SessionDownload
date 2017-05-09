@@ -40,7 +40,6 @@
 
 @implementation HTTPSessionShare
 
-static NSString *const temFileNameString = @"CFNetworkDownload";
 static HTTPSessionShare *_share = nil;
 
 
@@ -50,9 +49,6 @@ static HTTPSessionShare *_share = nil;
    static dispatch_once_t once;
     _dispatch_once(&once, ^{
         _share = [[self alloc] init];
-        
-        
-        
     });
     return _share;
 }
@@ -69,6 +65,8 @@ static HTTPSessionShare *_share = nil;
         
         
 //        _fileList = [NSMutableArray array];
+        _lock = [[NSLock alloc] init];
+        _lock.name = @"ZBHTTPSessionShareTaskDict";
         
         _taskDict = [NSMutableDictionary dictionary];
         _temDowningList = [NSMutableArray array];
@@ -85,24 +83,45 @@ static HTTPSessionShare *_share = nil;
         //以下代码辅助处理异常退出的情况
         
 
-//        [_backSession getTasksWithCompletionHandler:^(NSArray<NSURLSessionDataTask *> * _Nonnull dataTasks, NSArray<NSURLSessionUploadTask *> * _Nonnull uploadTasks, NSArray<NSURLSessionDownloadTask *> * _Nonnull downloadTasks) {
-//            
-//            for (NSURLSessionDownloadTask *task in downloadTasks) {
-//                NSLog(@"%zd",task.state);
-//                NSURLSessionDownloadTask *downTask = (NSURLSessionDownloadTask *)task;
-//                [self addDelegateForDownloadTask:downTask progressBlock:nil destinationBlock:nil completedBlock:nil];
-//                
-//                [downTask cancelByProducingResumeData:^(NSData * _Nullable resumeData) {
-//                    
-//                    [self handleResumeData:resumeData file:nil];
-//                    
-//                    
-//                }];
-//            }
-//        }];
+        [[ZB_NetWorkShare ZB_NetWorkShare].backSessionManager.session getTasksWithCompletionHandler:^(NSArray<NSURLSessionDataTask *> * _Nonnull dataTasks, NSArray<NSURLSessionUploadTask *> * _Nonnull uploadTasks, NSArray<NSURLSessionDownloadTask *> * _Nonnull downloadTasks) {
+            
+            for (NSURLSessionDownloadTask *task in downloadTasks) {
+                NSLog(@"%zd",task.state);
+                NSURLSessionDownloadTask *downTask = (NSURLSessionDownloadTask *)task;
+                
+                [downTask cancelByProducingResumeData:^(NSData * _Nullable resumeData) {
+                    
+                    [self handleResumeData:resumeData file:nil];
+                    
+                    
+                }];
+            }
+        }];
 
     }
     return self;
+}
+
+- (void)sessionDownloadAplicationWillTerminate
+{
+    //程序意外退出时 保存断点信息
+    
+    [[ZB_NetWorkShare ZB_NetWorkShare].backSessionManager.session getTasksWithCompletionHandler:^(NSArray<NSURLSessionDataTask *> * _Nonnull dataTasks, NSArray<NSURLSessionUploadTask *> * _Nonnull uploadTasks, NSArray<NSURLSessionDownloadTask *> * _Nonnull downloadTasks) {
+        
+        for (NSURLSessionDownloadTask *task in downloadTasks) {
+            NSLog(@"%zd",task.state);
+            NSURLSessionDownloadTask *downTask = (NSURLSessionDownloadTask *)task;
+            
+            [downTask cancelByProducingResumeData:^(NSData * _Nullable resumeData) {
+                
+                NSString *str = task.originalRequest.URL.absoluteString;
+                FileModel *file = [FileModelDbManager getFileModeWithFilUrl:str];
+                [self handleResumeData:resumeData file:file];
+                
+            }];
+        }
+    }];
+    
 }
 
 
@@ -142,7 +161,7 @@ static HTTPSessionShare *_share = nil;
         if (file.fileState == FileDownloading) {
             NSURLSessionTask *task = [_taskDict objectForKey:file.fileUrl];
             if (!task) {
-                [self beginDownloadFileWithFileModel:file];
+                [self AF_BeginDownloadFileWithFileModel:file];
                 
             }
         } else {
@@ -292,7 +311,7 @@ static HTTPSessionShare *_share = nil;
     //创建下载任务
     if (task) {
         
-        [self.taskDict setObject:task forKey:file.fileUrl];
+        [self addTask:task ForKey:file.fileUrl];
         [task resume];
     }
 
@@ -347,8 +366,8 @@ static HTTPSessionShare *_share = nil;
    
     //创建下载任务
     if (task) {
-
-        [self.taskDict setObject:task forKey:file.fileUrl];
+        
+        [self addTask:task ForKey:file.fileUrl];
         [task resume];
     }
 
@@ -404,7 +423,7 @@ static HTTPSessionShare *_share = nil;
         
     }
     
-    [_taskDict removeObjectForKey:file.fileUrl];
+    [self removeTaskForKey:file.fileUrl];
     [self startDownload];
     dispatch_async(dispatch_get_main_queue(), ^{
         if ([self.sessionDelegate respondsToSelector:@selector(updateTableViewWithFlModel:)] && self.sessionDelegate) {
@@ -444,28 +463,36 @@ static HTTPSessionShare *_share = nil;
         [FileModelDbManager updateFile:file];
     }
 }
-- (void)sessionDownloadAplicationWillTerminate
+
+- (void)removeTaskForKey:(NSString *)key
+{   [self.lock lock];
+    [self.taskDict removeObjectForKey:key];
+    [self.lock unlock];
+}
+
+- (void)addTask:(NSURLSessionTask *)task ForKey:(NSString *)key
 {
-    //程序意外退出时 保存断点信息
-    
-//    [_backSession getTasksWithCompletionHandler:^(NSArray<NSURLSessionDataTask *> * _Nonnull dataTasks, NSArray<NSURLSessionUploadTask *> * _Nonnull uploadTasks, NSArray<NSURLSessionDownloadTask *> * _Nonnull downloadTasks) {
-//        
-//        for (NSURLSessionDownloadTask *task in downloadTasks) {
-//            NSLog(@"%zd",task.state);
-//            NSURLSessionDownloadTask *downTask = (NSURLSessionDownloadTask *)task;
-//            [self addDelegateForDownloadTask:downTask progressBlock:nil destinationBlock:nil completedBlock:nil];
-//            
-//            [downTask cancelByProducingResumeData:^(NSData * _Nullable resumeData) {
-//                
-//                NSString *str = task.originalRequest.URL.absoluteString;
-//                FileModel *file = [FileModelDbManager getFileModeWithFilUrl:str];
-//                [self handleResumeData:resumeData file:file];
-//                
-//            }];
-//        }
-//    }];
+    [self.lock lock];
+    [self.taskDict setObject:task forKey:key];
+    [self.lock unlock];
 
 }
+- (void)removeFileWithFileArray:(NSArray *)fileArray
+{
+    for (FileModel *pt in fileArray) {
+        NSURLSessionDownloadTask *task = [self.taskDict objectForKey:pt.fileUrl];
+        if (task) {
+            [task cancel];
+            [self removeTaskForKey:pt.fileUrl];
+        }
+        [FileModelDbManager delFiles:pt];
+        [[NSFileManager defaultManager] removeItemAtPath:pt.filePath error:nil];
+        [self.downloadingList removeObjectsInArray:fileArray];
+        [self.diskFileList removeObjectsInArray:fileArray];
+    }
+}
+
+
 
 
 

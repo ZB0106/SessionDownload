@@ -401,19 +401,8 @@ static HTTPSessionShare *_share = nil;
     [self.temDowningList removeObject:file];
     [self.diskFileList addObject:file];
     
-    
-    
     [FileModelDbManager updateFile:file];
     
-    
-    
-    
-    dispatch_async(dispatch_get_main_queue(), ^{
-        if ([self.sessionDelegate respondsToSelector:@selector(updateProgressWithFlModel:)] && self.sessionDelegate) {
-            [self.sessionDelegate updateProgressWithFlModel:file];
-        }
-        
-    });
     return destPath;
 }
 

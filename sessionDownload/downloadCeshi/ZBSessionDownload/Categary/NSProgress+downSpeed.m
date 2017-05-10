@@ -9,10 +9,6 @@
 #import "NSProgress+downSpeed.h"
 #import <objc/runtime.h>
 
-static char zb_downSpeed;
-static char zb_preBytes;
-static char zb_startDate;
-
 
 @implementation NSProgress (downSpeed)
 

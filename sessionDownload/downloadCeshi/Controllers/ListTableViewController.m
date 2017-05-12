@@ -22,6 +22,11 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
+    
+    [[UIBarButtonItem appearance] setTitleTextAttributes:@{NSForegroundColorAttributeName:[UIColor blueColor]} forState:UIControlStateNormal];
+    self.navigationItem.title = @"demo";
+    self.navigationController.navigationBar.tintColor = [UIColor grayColor];
+    self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"全部开始" style:UIBarButtonItemStylePlain target:self action:@selector(xiazai)];
     self.count = 0;
     self.view.backgroundColor = [UIColor redColor];
     self.dataSource = @[@"http://dldir1.qq.com/qqfile/QQforMac/QQ_V4.2.4.dmg",
@@ -40,6 +45,20 @@
 
 }
 
+- (void)xiazai
+{
+    NSMutableArray *arrM = [NSMutableArray array];
+    for (NSString *urlStr in self.dataSource) {
+       NSString *url = [urlStr stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLQueryAllowedCharacterSet]];
+        NSString *name = [[url componentsSeparatedByString:@"/"] lastObject];
+        FileModel *fileModel = [[FileModel alloc] init];
+        fileModel.fileName = name;
+        fileModel.fileUrl = urlStr;
+        [arrM addObject:fileModel];
+    }
+   
+    [HttpShare downloadFileWithFileModelArray:arrM];
+}
 - (void)didReceiveMemoryWarning {
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.

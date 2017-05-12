@@ -10,4 +10,12 @@
 
 @implementation FileModel
 
+- (instancetype)init
+{
+    if (self = [super init]) {
+        _fileState = FileWillDownload;
+    }
+    return self;
+}
+
 @end

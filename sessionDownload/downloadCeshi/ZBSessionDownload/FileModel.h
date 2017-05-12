@@ -9,9 +9,9 @@
 #import <Foundation/Foundation.h>
 
 typedef enum {
-    FileWillDownload = 0,     //等待下载
+    FileStopDownload = 0, //停止下载(停止下载放在上面，便于排序)
+    FileWillDownload,     //等待下载
     FileDownloading,      //下载中
-    FileStopDownload,      //停止下载
     FileDownloaded          //已下载
 }DownloadState;
 @interface FileModel : NSObject
@@ -28,5 +28,6 @@ typedef enum {
 @property (nonatomic, copy) NSString *tempFileName;
 @property (nonatomic, copy) NSString *resumeData;
 @property (nonatomic, copy) NSString *tempPath;
+
 
 @end

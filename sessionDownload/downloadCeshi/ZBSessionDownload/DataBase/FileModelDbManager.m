@@ -142,7 +142,7 @@
 {
     __block NSMutableArray *modelArray = [NSMutableArray array];
     [DBQueueShare inDatabase:^(FMDatabase *db) {
-        FMResultSet *result = [db executeQuery:@"SELECT * FROM DOWNLOADFILE WHERE fileState = 3"];
+        FMResultSet *result = [db executeQuery:@"SELECT * FROM DOWNLOADFILE WHERE fileState = ?",@(FileDownloaded)];
         if (result) {
             while ([result next]) {
                 FileModel *model = [FileModelDbManager fileModelWithResult:result];
@@ -159,7 +159,7 @@
 {
     __block NSMutableArray *modelArray = [NSMutableArray array];
     [DBQueueShare inDatabase:^(FMDatabase *db) {
-        FMResultSet *result = [db executeQuery:@"SELECT * FROM DOWNLOADFILE WHERE fileState = 2"];
+        FMResultSet *result = [db executeQuery:@"SELECT * FROM DOWNLOADFILE WHERE fileState = ?",@(FileStopDownload)];
         if (result) {
             while ([result next]) {
                 FileModel *model = [FileModelDbManager fileModelWithResult:result];
@@ -176,7 +176,7 @@
 {
     __block NSMutableArray *modelArray = [NSMutableArray array];
     [DBQueueShare inDatabase:^(FMDatabase *db) {
-        FMResultSet *result = [db executeQuery:@"SELECT * FROM DOWNLOADFILE WHERE fileState = 0 OR fileState = 1"];
+        FMResultSet *result = [db executeQuery:@"SELECT * FROM DOWNLOADFILE WHERE fileState = ? OR fileState = ?",@(FileWillDownload),@(FileDownloading)];
         if (result) {
             while ([result next]) {
                 FileModel *model = [FileModelDbManager fileModelWithResult:result];
@@ -193,7 +193,7 @@
 {
     __block NSMutableArray *modelArray = [NSMutableArray array];
     [DBQueueShare inDatabase:^(FMDatabase *db) {
-        FMResultSet *result = [db executeQuery:@"SELECT * FROM DOWNLOADFILE WHERE fileState <> 3"];
+        FMResultSet *result = [db executeQuery:@"SELECT * FROM DOWNLOADFILE WHERE fileState <> ?",@(FileDownloaded)];
         if (result) {
             while ([result next]) {
                 FileModel *model = [FileModelDbManager fileModelWithResult:result];
@@ -209,7 +209,7 @@
 {
     __block BOOL ret = NO;
     [DBQueueShare inDatabase:^(FMDatabase *db) {
-        ret = [db executeUpdate:@"UPDATE DOWNLOADFILE SET fileState = 2 WHERE fileState = 0 OR fileState = 1"];
+        ret = [db executeUpdate:@"UPDATE DOWNLOADFILE SET fileState = ? WHERE fileState = ? OR fileState = ?",@(FileStopDownload),@(FileWillDownload),@(FileDownloading)];
         
     }];
     return ret;

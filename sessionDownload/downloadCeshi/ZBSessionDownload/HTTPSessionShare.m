@@ -200,7 +200,7 @@ static HTTPSessionShare *_share = nil;
 - (void)startAllTask
 {
     for (FileModel *file in self.downloadingList) {
-        if (file.fileState == FileStopDownload) {
+        if (file.fileState != FileDownloaded) {
             file.fileState = FileWillDownload;
         }
     }

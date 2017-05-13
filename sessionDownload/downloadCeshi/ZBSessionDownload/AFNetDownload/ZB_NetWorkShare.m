@@ -12,7 +12,6 @@
 @interface ZB_NetWorkShare ()
 
 @property (nonatomic, strong) AFHTTPSessionManager *backSessionManager;
-@property (nonatomic, strong) AFNetworkReachabilityManager *reachManager;
 
 
 @end
@@ -59,9 +58,6 @@ static ZB_NetWorkShare *_instance;
         //后台任务session
         _backSessionManager = [[AFHTTPSessionManager alloc] initWithSessionConfiguration:sessionConfig];
         
-        //网络监听
-        _reachManager = [AFNetworkReachabilityManager manager];
-        
         [self startMonitoring];
         
         //设置全局的baseUrl
@@ -74,7 +70,7 @@ static ZB_NetWorkShare *_instance;
 {
     dispatch_sync(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
         
-        [_reachManager startMonitoring];
+        [_backSessionManager.reachabilityManager startMonitoring];
     });
 }
 

@@ -16,7 +16,8 @@
 @property (nonatomic, strong, readonly) AFNetworkReachabilityManager * _Nullable reachManager;
 
 + (instancetype _Nullable )ZB_NetWorkShare;
-
+//后台任务处理
+- (void)addCompletionHandle:(void (^_Nullable)())completionHandler forSession:(NSString *_Nullable)identifier;
 - (NSURLSessionDownloadTask *_Nullable)downloadTaskWithUrlStr:(NSString *_Nullable)urlStr
                                                 progress:(nullable void (^)(NSProgress * _Nullable downloadProgress))downloadProgressBlock
                                              destination:(nullable NSURL * _Nullable (^)(NSURL * _Nullable targetPath, NSURLResponse * _Nullable response))destination

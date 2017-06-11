@@ -399,6 +399,7 @@
 				TargetAttributes = {
 					213E7BB51E794A0B00F9B7E2 = {
 						CreatedOnToolsVersion = 8.2.1;
+						DevelopmentTeam = 4K2U4QJKGX;
 						ProvisioningStyle = Automatic;
 					};
 					213E7BCE1E794A0B00F9B7E2 = {
@@ -686,6 +687,7 @@
 			baseConfigurationReference = 564A094D5F463A7A6E4A003B /* Pods-downloadCeshi.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				DEVELOPMENT_TEAM = 4K2U4QJKGX;
 				GCC_INCREASE_PRECOMPILED_HEADER_SHARING = NO;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = downloadCeshi/Others/PrefixHeader.pch;
@@ -701,6 +703,7 @@
 			baseConfigurationReference = 0C3A5A756D609957E99CEE33 /* Pods-downloadCeshi.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				DEVELOPMENT_TEAM = 4K2U4QJKGX;
 				GCC_INCREASE_PRECOMPILED_HEADER_SHARING = NO;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = downloadCeshi/Others/PrefixHeader.pch;

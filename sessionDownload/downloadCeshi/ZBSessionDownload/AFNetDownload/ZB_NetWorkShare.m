@@ -12,7 +12,7 @@
 @interface ZB_NetWorkShare ()
 
 @property (nonatomic, strong) AFHTTPSessionManager *backSessionManager;
-
+@property (nonatomic, strong) NSMutableDictionary *completionHandlerDictionary;
 
 @end
 
@@ -57,7 +57,16 @@ static ZB_NetWorkShare *_instance;
         NSURLSessionConfiguration* sessionConfig = [NSURLSessionConfiguration backgroundSessionConfigurationWithIdentifier:identifier];
         //后台任务session
         _backSessionManager = [[AFHTTPSessionManager alloc] initWithSessionConfiguration:sessionConfig];
-        
+        __weak typeof(self) weak = self;
+        [_backSessionManager setDidFinishEventsForBackgroundURLSessionBlock:^(NSURLSession * _Nonnull session) {
+            NSLog(@"Background URL session %@ finished events.\n", session);
+            if (session.configuration.identifier) {
+                // 调用在 -application:handleEventsForBackgroundURLSession: 中保存的 handler
+                __strong typeof(weak) strongSelf = weak;
+                [strongSelf callCompletionHandlerForSession:session.configuration.identifier];
+            }
+        }];
+
         [self startMonitoring];
         
         //设置全局的baseUrl
@@ -65,6 +74,25 @@ static ZB_NetWorkShare *_instance;
     }
     return self;
 }
+
+- (void)callCompletionHandlerForSession:(NSString *)identifier {
+    
+    void (^completionHandler)() = [self.completionHandlerDictionary objectForKey: identifier];
+    if (completionHandler) {
+        [self.completionHandlerDictionary removeObjectForKey: identifier];
+        
+        completionHandler();
+    }
+}
+
+//后台任务处理
+- (void)addCompletionHandle:(void (^)())completionHandler forSession:(NSString *)identifier
+{
+    if (![self.completionHandlerDictionary objectForKey:identifier]) {
+        [self.completionHandlerDictionary setObject:completionHandler forKey:identifier];
+    }
+}
+
 
 - (void)startMonitoring
 {

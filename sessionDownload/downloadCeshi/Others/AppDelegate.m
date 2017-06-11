@@ -8,6 +8,7 @@
 
 #import "AppDelegate.h"
 #import "DatabaseQueueShare.h"
+#import "ZB_NetWorkShare.h"
 @interface AppDelegate ()
 
 @end
@@ -46,9 +47,12 @@
 
 
 - (void)applicationWillTerminate:(UIApplication *)application {
-    [[NSNotificationCenter defaultCenter] postNotificationName:MCAplicationWillTerminate object:nil userInfo:nil];
+    
     // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
 }
-
+- (void)application:(UIApplication *)application handleEventsForBackgroundURLSession:(NSString *)identifier completionHandler:(void (^)())completionHandler
+{
+    [[ZB_NetWorkShare ZB_NetWorkShare] addCompletionHandle:completionHandler forSession:identifier];
+}
 
 @end

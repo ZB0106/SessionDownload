@@ -30,6 +30,8 @@
 //存储磁盘缓存的文件
 @property (nonatomic, strong) NSMutableArray *diskFileList;
 
+@property (nonatomic, strong) NSMutableDictionary *completionHandlerDictionary;
+
 @end
 
 @implementation HTTPSessionShare
@@ -55,13 +57,15 @@ static HTTPSessionShare *_share = nil;
         
         
         //注册通知处理异常情况
-        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(sessionDownloadAplicationWillTerminate) name:MCAplicationWillTerminate object:nil];
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(sessionDownloadAplicationWillTerminate) name:UIApplicationWillTerminateNotification object:nil];
         
         
         _lock = [[NSLock alloc] init];
         _lock.name = @"ZBHTTPSessionShareTaskDict";
         
         _taskDict = [NSMutableDictionary dictionary];
+        //后台任务处理
+        _completionHandlerDictionary = [NSMutableDictionary dictionary];
         _maxCount = 3;
         _downloadingList = [NSMutableArray array];
         _diskFileList = [NSMutableArray array];
@@ -253,13 +257,12 @@ static HTTPSessionShare *_share = nil;
         }
 
     }];
-    
-    [self.downloadingList removeObjectAtIndex:tmIdx];
-    [self.downloadingList insertObject:file atIndex:0];
+    //不进行下载排序
+//    [self.downloadingList removeObjectAtIndex:tmIdx];
+//    [self.downloadingList insertObject:file atIndex:0];
 
     [self startDownload];
 }
-
 
 - (void)AF_BeginDownloadFileWithFileModel:(FileModel *)file
 {
@@ -274,28 +277,31 @@ static HTTPSessionShare *_share = nil;
         //移动缓存文件到tmp目录，进行断点下载,此处不能用file的属性传入缓存路径名，程序第一次运行的时候目录不存在，会出现错误
         NSError *error ;
         [[NSFileManager defaultManager] moveItemAtPath:[[[FileManageShare fileManageShare] miaocaiRootTempCache] stringByAppendingPathComponent:file.tempFileName] toPath:[RootTemp stringByAppendingPathComponent:file.tempFileName] error:&error];
-        
         task = [[ZB_NetWorkShare ZB_NetWorkShare] downloadTaskWithResumeData:resumData progress:^(NSProgress *downloadProgress) {
-            [weak addDownloadProgressWithProgress:downloadProgress file:file];
+            __strong typeof(weak) strongSelf = weak;
+            [strongSelf addDownloadProgressWithProgress:downloadProgress file:file];
             
         } destination:^NSURL *(NSURL *targetPath, NSURLResponse *response) {
-            
-            return [weak addDownloadDestinationBlockWithLocation:targetPath downloadTask:response file:file];
+            __strong typeof(weak) strongSelf = weak;
+            return [strongSelf addDownloadDestinationBlockWithLocation:targetPath downloadTask:response file:file];
 
         } completionHandler:^(NSURLResponse *response, NSURL * _Nullable filePath, NSError * _Nullable error) {
-            [weak addCompleteHandlerWithDownloadTask:response error:error file:file];
+            __strong typeof(weak) strongSelf = weak;
+            [strongSelf addCompleteHandlerWithDownloadTask:response error:error file:file];
         }];
         
         
     } else {
         task = [[ZB_NetWorkShare ZB_NetWorkShare] downloadTaskWithUrlStr:file.fileUrl progress:^(NSProgress *downloadProgress) {
-             [weak addDownloadProgressWithProgress:downloadProgress file:file];
+            __strong typeof(weak) strongSelf = weak;
+             [strongSelf addDownloadProgressWithProgress:downloadProgress file:file];
         } destination:^NSURL *(NSURL *targetPath, NSURLResponse *response) {
-            
-            return [weak addDownloadDestinationBlockWithLocation:targetPath downloadTask:response file:file];
+            __strong typeof(weak) strongSelf = weak;
+            return [strongSelf addDownloadDestinationBlockWithLocation:targetPath downloadTask:response file:file];
             
         } completionHandler:^(NSURLResponse *response, NSURL * _Nullable filePath, NSError * _Nullable error) {
-            [weak addCompleteHandlerWithDownloadTask:response error:error file:file];
+            __strong typeof(weak) strongSelf = weak;
+            [strongSelf addCompleteHandlerWithDownloadTask:response error:error file:file];
         }];
     }
     //创建下载任务
@@ -307,62 +313,62 @@ static HTTPSessionShare *_share = nil;
 
 }
 
-- (void)beginDownloadFileWithFileModel:(FileModel *)file
-{
-    //获取文件缓存信息
-    NSLog(@"22222222");
-    
-    NSURLSessionDownloadTask *task = nil;
-     __weak typeof(self) weak = self;
-    if (file.resumeData.length > 0 && file.tempPath.length > 0) {
-        
-        NSData *resumData = [file.resumeData dataUsingEncoding:NSUTF8StringEncoding];
-        
-        //移动缓存文件到tmp目录，进行断点下载,此处不能用file的属性传入缓存路径名，程序第一次运行的时候目录不存在，会出现错误
-        NSError *error ;
-        [[NSFileManager defaultManager] moveItemAtPath:[[[FileManageShare fileManageShare] miaocaiRootTempCache] stringByAppendingPathComponent:file.tempFileName] toPath:[RootTemp stringByAppendingPathComponent:file.tempFileName] error:&error];
-        task = [[ZBSessionDownloadManager ZBSessionDownloadManager] downloadTaskWithResumedata:resumData progressBlock:^(NSProgress *progress) {
-            [weak addDownloadProgressWithProgress:progress file:file];
-        } destinationBlock:^NSURL *(NSURL *delegateLocation, NSURLResponse *downloadTask) {
-            
-            return [weak addDownloadDestinationBlockWithLocation:delegateLocation downloadTask:downloadTask file:file];
-            
-        } completeHandler:^(NSURLResponse *downloadTask, NSError *delegateError) {
-            
-            [weak addCompleteHandlerWithDownloadTask:downloadTask error:delegateError file:file];
-            
-        }];
-        
-        
-    } else {
-        NSMutableURLRequest *request = [[AFHTTPRequestSerializer serializer] requestWithMethod:@"GET" URLString:file.fileUrl parameters:nil error:nil];
-        task = [[ZBSessionDownloadManager ZBSessionDownloadManager] downloadTaskWithRequest:[request copy] progressBlock:^(NSProgress *progress) {
-            
-            [weak addDownloadProgressWithProgress:progress file:file];
-            
-        } destinationBlock:^NSURL *(NSURL *delegateLocation, NSURLResponse *downloadTask) {
-            
-             return [weak addDownloadDestinationBlockWithLocation:delegateLocation downloadTask:downloadTask file:file];
-            
-        } completeHandler:^(NSURLResponse *downloadTask, NSError *delegateError) {
-            
-             [weak addCompleteHandlerWithDownloadTask:downloadTask error:delegateError file:file];
-            
-        }];
-        
-       
-       
-    }
-    
-   
-    //创建下载任务
-    if (task) {
-        
-        [self addTask:task ForKey:file.fileUrl];
-        [task resume];
-    }
-
-}
+//- (void)beginDownloadFileWithFileModel:(FileModel *)file
+//{
+//    //获取文件缓存信息
+//    NSLog(@"22222222");
+//    
+//    NSURLSessionDownloadTask *task = nil;
+//     __weak typeof(self) weak = self;
+//    if (file.resumeData.length > 0 && file.tempPath.length > 0) {
+//        
+//        NSData *resumData = [file.resumeData dataUsingEncoding:NSUTF8StringEncoding];
+//        
+//        //移动缓存文件到tmp目录，进行断点下载,此处不能用file的属性传入缓存路径名，程序第一次运行的时候目录不存在，会出现错误
+//        NSError *error ;
+//        [[NSFileManager defaultManager] moveItemAtPath:[[[FileManageShare fileManageShare] miaocaiRootTempCache] stringByAppendingPathComponent:file.tempFileName] toPath:[RootTemp stringByAppendingPathComponent:file.tempFileName] error:&error];
+//        task = [[ZBSessionDownloadManager ZBSessionDownloadManager] downloadTaskWithResumedata:resumData progressBlock:^(NSProgress *progress) {
+//            [weak addDownloadProgressWithProgress:progress file:file];
+//        } destinationBlock:^NSURL *(NSURL *delegateLocation, NSURLResponse *downloadTask) {
+//            
+//            return [weak addDownloadDestinationBlockWithLocation:delegateLocation downloadTask:downloadTask file:file];
+//            
+//        } completeHandler:^(NSURLResponse *downloadTask, NSError *delegateError) {
+//            
+//            [weak addCompleteHandlerWithDownloadTask:downloadTask error:delegateError file:file];
+//            
+//        }];
+//        
+//        
+//    } else {
+//        NSMutableURLRequest *request = [[AFHTTPRequestSerializer serializer] requestWithMethod:@"GET" URLString:file.fileUrl parameters:nil error:nil];
+//        task = [[ZBSessionDownloadManager ZBSessionDownloadManager] downloadTaskWithRequest:[request copy] progressBlock:^(NSProgress *progress) {
+//            
+//            [weak addDownloadProgressWithProgress:progress file:file];
+//            
+//        } destinationBlock:^NSURL *(NSURL *delegateLocation, NSURLResponse *downloadTask) {
+//            
+//             return [weak addDownloadDestinationBlockWithLocation:delegateLocation downloadTask:downloadTask file:file];
+//            
+//        } completeHandler:^(NSURLResponse *downloadTask, NSError *delegateError) {
+//            
+//             [weak addCompleteHandlerWithDownloadTask:downloadTask error:delegateError file:file];
+//            
+//        }];
+//        
+//       
+//       
+//    }
+//    
+//   
+//    //创建下载任务
+//    if (task) {
+//        
+//        [self addTask:task ForKey:file.fileUrl];
+//        [task resume];
+//    }
+//
+//}
 
 
 - (void)addDownloadProgressWithProgress:(NSProgress *)progress file:(FileModel *)file

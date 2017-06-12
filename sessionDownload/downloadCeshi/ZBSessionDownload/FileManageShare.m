@@ -9,6 +9,8 @@
 #import "FileManageShare.h"
 
 
+static NSString *appleDownloadLocation = @"com.apple.nsurlsessiond";
+
 static FileManageShare *_share = nil;
 @implementation FileManageShare
 
@@ -81,4 +83,16 @@ static FileManageShare *_share = nil;
     return path;
 }
 
+- (NSString *)miaocairootAppleLocationCache
+{
+    NSString *path = [RootCache stringByAppendingPathComponent:[NSString stringWithFormat:@"%@/Downloads/%@",appleDownloadLocation,[NSBundle mainBundle].bundleIdentifier]];
+    NSFileManager *fileManager = [NSFileManager defaultManager];
+    if(![fileManager fileExistsAtPath:path])
+    {
+        [fileManager createDirectoryAtPath:path withIntermediateDirectories:YES attributes:nil error:nil];
+    }
+    
+    return path;
+
+}
 @end

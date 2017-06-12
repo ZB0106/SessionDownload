@@ -15,5 +15,5 @@
 - (NSString *)miaocaiRootTempCache;
 - (NSString *)miaocaiRootDownloadFileCache;
 - (NSString *)miaocaiRootDBCache;
-
+- (NSString *)miaocairootAppleLocationCache;
 @end

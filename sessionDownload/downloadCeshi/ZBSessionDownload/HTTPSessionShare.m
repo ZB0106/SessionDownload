@@ -17,7 +17,7 @@
 #import "ZB_NetWorkShare.h"
 #import "ZBSessionDownloadManager.h"
 
-@interface HTTPSessionShare ()
+@interface HTTPSessionShare ()<ZB_NetWorkShareDelegate>
 
 
 @property (readwrite, nonatomic, strong) NSLock *lock;
@@ -41,7 +41,7 @@ static HTTPSessionShare *_share = nil;
 
 + (HTTPSessionShare *)httpSessionShare
 {
-    
+
    static dispatch_once_t once;
     _dispatch_once(&once, ^{
         _share = [[self alloc] init];
@@ -74,9 +74,8 @@ static HTTPSessionShare *_share = nil;
         [_diskFileList addObjectsFromArray:[FileModelDbManager getAllDownloadedFile]];
         [_downloadingList addObjectsFromArray:[FileModelDbManager getAllNotCompletedFile]];
         
-        ////session在每次重建时，会检查有没有没做完的任务，如果有session就会继续未完成的任务，这样很可能导致程序崩溃（在这个后台session里，每次意外退出app以后，再次重新创建后台session，都会默认开启上次崩溃前未执行完的任务，所以需要一个第三方的中介来对应一个任务,并且有次数限制
-        //以下代码辅助处理异常退出的情况
         
+        [ZB_NetWorkShare ZB_NetWorkShare].backSessionCompletionDelegate = self;
 
         [[ZB_NetWorkShare ZB_NetWorkShare].backSessionManager.session getTasksWithCompletionHandler:^(NSArray<NSURLSessionDataTask *> * _Nonnull dataTasks, NSArray<NSURLSessionUploadTask *> * _Nonnull uploadTasks, NSArray<NSURLSessionDownloadTask *> * _Nonnull downloadTasks) {
             
@@ -84,12 +83,14 @@ static HTTPSessionShare *_share = nil;
                 NSLog(@"%zd",task.state);
                 NSURLSessionDownloadTask *downTask = (NSURLSessionDownloadTask *)task;
                 
-                [downTask cancelByProducingResumeData:^(NSData * _Nullable resumeData) {
-                    
-                    [self handleResumeData:resumeData file:nil];
-                    
-                    
-                }];
+                NSString *url = downTask.response.URL.absoluteString;
+                NSLog(@"%@",@(task.response.expectedContentLength));
+//                [downTask cancelByProducingResumeData:^(NSData * _Nullable resumeData) {
+//                    
+//                    [self handleResumeData:resumeData file:nil];
+//                    
+//                    
+//                }];
             }
         }];
 
@@ -97,25 +98,52 @@ static HTTPSessionShare *_share = nil;
     return self;
 }
 
+
+//在后台下载完成以后的处理
+- (void)backSessionDidCompletionWithSession:(NSString *)identifier
+{
+    
+    NSString *path = [[FileManageShare fileManageShare] miaocairootAppleLocationCache];
+    NSString *desPath = [[FileManageShare fileManageShare] miaocaiRootDownloadFileCache];
+
+    NSArray *array = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:path error:nil];
+    for (NSString *str in array) {
+        [[NSFileManager defaultManager] moveItemAtURL:[NSURL fileURLWithPath:[path stringByAppendingPathComponent:str]] toURL:[NSURL fileURLWithPath:[desPath stringByAppendingPathComponent:str]] error:nil];
+    }
+
+    NSLog(@"backsessionhandler");
+    [[ZB_NetWorkShare ZB_NetWorkShare].backSessionManager.session getAllTasksWithCompletionHandler:^(NSArray<__kindof NSURLSessionTask *> * _Nonnull tasks) {
+        NSLog(@"1111111111");
+    }];
+    NSLog(@"44444444");
+    
+}
 - (void)sessionDownloadAplicationWillTerminate
 {
+    //如果程序在后台下载直到完成期间一直没有初始化，会导致崩溃
+    //操作：选择一个下载，然后退出程序，再运行程序以后进入后台，等后台下载完成以后再初始化session或者
+    //点击选择一个下载，然后退出程序，知道在后台下载完再次打开程序(大概是3分钟左右）
     //程序意外退出时 保存断点信息
-    
-    [[ZB_NetWorkShare ZB_NetWorkShare].backSessionManager.session getTasksWithCompletionHandler:^(NSArray<NSURLSessionDataTask *> * _Nonnull dataTasks, NSArray<NSURLSessionUploadTask *> * _Nonnull uploadTasks, NSArray<NSURLSessionDownloadTask *> * _Nonnull downloadTasks) {
-        
-        for (NSURLSessionDownloadTask *task in downloadTasks) {
-            NSLog(@"%zd",task.state);
-            NSURLSessionDownloadTask *downTask = (NSURLSessionDownloadTask *)task;
-            
-            [downTask cancelByProducingResumeData:^(NSData * _Nullable resumeData) {
-                
-                NSString *str = task.originalRequest.URL.absoluteString;
-                FileModel *file = [FileModelDbManager getFileModeWithFilUrl:str];
-                [self handleResumeData:resumeData file:file];
-                
-            }];
-        }
-    }];
+//    NSLog(@"applicationDidEnterBackground--------");
+//    NSLog(@"%@=",[ZB_NetWorkShare ZB_NetWorkShare].backSessionManager.session);
+//    [[ZB_NetWorkShare ZB_NetWorkShare].backSessionManager.session getAllTasksWithCompletionHandler:^(NSArray<__kindof NSURLSessionTask *> * _Nonnull tasks) {
+//        NSLog(@"33241");
+//    }];
+//    [[ZB_NetWorkShare ZB_NetWorkShare].backSessionManager.session getTasksWithCompletionHandler:^(NSArray<NSURLSessionDataTask *> * _Nonnull dataTasks, NSArray<NSURLSessionUploadTask *> * _Nonnull uploadTasks, NSArray<NSURLSessionDownloadTask *> * _Nonnull downloadTasks) {
+//        NSLog(@"fadfafasfdas");
+//        for (NSURLSessionDownloadTask *task in downloadTasks) {
+//            NSLog(@"%zd",task.state);
+//            NSURLSessionDownloadTask *downTask = (NSURLSessionDownloadTask *)task;
+//            NSLog(@"applicationDidEnterBackground--------");
+//            [downTask cancelByProducingResumeData:^(NSData * _Nullable resumeData) {
+//                
+//                NSString *str = task.originalRequest.URL.absoluteString;
+//                FileModel *file = [FileModelDbManager getFileModeWithFilUrl:str];
+//                [self handleResumeData:resumeData file:file];
+//                
+//            }];
+//        }
+//    }];
     
 }
 
@@ -184,7 +212,7 @@ static HTTPSessionShare *_share = nil;
                     [self removeTaskForKey:file.fileUrl];
                     if (file) {
                         file.fileState = FileStopDownload;
-                        [FileModelDbManager updateFile:file];
+                        [FileModelDbManager insertFile:file];
                     }
                   [task cancelByProducingResumeData:^(NSData * _Nullable resumeData) {
                       
@@ -266,15 +294,18 @@ static HTTPSessionShare *_share = nil;
 
 - (void)AF_BeginDownloadFileWithFileModel:(FileModel *)file
 {
+
     //获取文件缓存信息
     NSLog(@"22222222");
     NSURLSessionDownloadTask *task = nil;
     __weak typeof(self) weak = self;
+    NSLog(@"%@",[[FileManageShare fileManageShare] miaocaiRootTempCache]);
     if (file.resumeData.length > 0 && file.tempPath.length > 0) {
         
         NSData *resumData = [file.resumeData dataUsingEncoding:NSUTF8StringEncoding];
         
         //移动缓存文件到tmp目录，进行断点下载,此处不能用file的属性传入缓存路径名，程序第一次运行的时候目录不存在，会出现错误
+        
         NSError *error ;
         [[NSFileManager defaultManager] moveItemAtPath:[[[FileManageShare fileManageShare] miaocaiRootTempCache] stringByAppendingPathComponent:file.tempFileName] toPath:[RootTemp stringByAppendingPathComponent:file.tempFileName] error:&error];
         task = [[ZB_NetWorkShare ZB_NetWorkShare] downloadTaskWithResumeData:resumData progress:^(NSProgress *downloadProgress) {
@@ -313,63 +344,6 @@ static HTTPSessionShare *_share = nil;
 
 }
 
-//- (void)beginDownloadFileWithFileModel:(FileModel *)file
-//{
-//    //获取文件缓存信息
-//    NSLog(@"22222222");
-//    
-//    NSURLSessionDownloadTask *task = nil;
-//     __weak typeof(self) weak = self;
-//    if (file.resumeData.length > 0 && file.tempPath.length > 0) {
-//        
-//        NSData *resumData = [file.resumeData dataUsingEncoding:NSUTF8StringEncoding];
-//        
-//        //移动缓存文件到tmp目录，进行断点下载,此处不能用file的属性传入缓存路径名，程序第一次运行的时候目录不存在，会出现错误
-//        NSError *error ;
-//        [[NSFileManager defaultManager] moveItemAtPath:[[[FileManageShare fileManageShare] miaocaiRootTempCache] stringByAppendingPathComponent:file.tempFileName] toPath:[RootTemp stringByAppendingPathComponent:file.tempFileName] error:&error];
-//        task = [[ZBSessionDownloadManager ZBSessionDownloadManager] downloadTaskWithResumedata:resumData progressBlock:^(NSProgress *progress) {
-//            [weak addDownloadProgressWithProgress:progress file:file];
-//        } destinationBlock:^NSURL *(NSURL *delegateLocation, NSURLResponse *downloadTask) {
-//            
-//            return [weak addDownloadDestinationBlockWithLocation:delegateLocation downloadTask:downloadTask file:file];
-//            
-//        } completeHandler:^(NSURLResponse *downloadTask, NSError *delegateError) {
-//            
-//            [weak addCompleteHandlerWithDownloadTask:downloadTask error:delegateError file:file];
-//            
-//        }];
-//        
-//        
-//    } else {
-//        NSMutableURLRequest *request = [[AFHTTPRequestSerializer serializer] requestWithMethod:@"GET" URLString:file.fileUrl parameters:nil error:nil];
-//        task = [[ZBSessionDownloadManager ZBSessionDownloadManager] downloadTaskWithRequest:[request copy] progressBlock:^(NSProgress *progress) {
-//            
-//            [weak addDownloadProgressWithProgress:progress file:file];
-//            
-//        } destinationBlock:^NSURL *(NSURL *delegateLocation, NSURLResponse *downloadTask) {
-//            
-//             return [weak addDownloadDestinationBlockWithLocation:delegateLocation downloadTask:downloadTask file:file];
-//            
-//        } completeHandler:^(NSURLResponse *downloadTask, NSError *delegateError) {
-//            
-//             [weak addCompleteHandlerWithDownloadTask:downloadTask error:delegateError file:file];
-//            
-//        }];
-//        
-//       
-//       
-//    }
-//    
-//   
-//    //创建下载任务
-//    if (task) {
-//        
-//        [self addTask:task ForKey:file.fileUrl];
-//        [task resume];
-//    }
-//
-//}
-
 
 - (void)addDownloadProgressWithProgress:(NSProgress *)progress file:(FileModel *)file
 {
@@ -386,6 +360,7 @@ static HTTPSessionShare *_share = nil;
 }
 - (NSURL *)addDownloadDestinationBlockWithLocation:(NSURL *)location downloadTask:(NSURLResponse *)downloadTask file:(FileModel *)file
 {
+    NSLog(@"didfinishtourl   ===%@",location.path);
     NSURL *destPath = [NSURL fileURLWithPath:[RootCache stringByAppendingPathComponent:downloadTask.suggestedFilename]];
     NSData *data = [[NSFileManager defaultManager] contentsAtPath:location.path];
     file.filePath = destPath.path;
@@ -397,13 +372,14 @@ static HTTPSessionShare *_share = nil;
     [self.downloadingList removeObject:file];
     [self.diskFileList addObject:file];
     
-    [FileModelDbManager updateFile:file];
+    [FileModelDbManager insertFile:file];
     
     return destPath;
 }
 
 - (void)addCompleteHandlerWithDownloadTask:(NSURLResponse *)downloadTask error:(NSError *)error file:(FileModel *)file
 {
+    NSLog(@"completionerror");
     if (error) {
         NSLog(@"%@",error);
         NSData *data = error.userInfo[NSURLSessionDownloadTaskResumeData];
@@ -427,7 +403,14 @@ static HTTPSessionShare *_share = nil;
         
         NSDictionary *tmdict = getResumeDictionary(resumeData);
         if (!file) {
-            file = [FileModelDbManager getFileModeWithFilUrl:tmdict[@"NSURLSessionDownloadURL"]];
+            for (FileModel *tm in _downloadingList) {
+                if ([tm.fileUrl isEqualToString:tmdict[@"NSURLSessionDownloadURL"]]) {
+                    file = tm;
+                    break;
+                }
+
+//                file = [FileModelDbManager getFileModeWithFilUrl:tmdict[@"NSURLSessionDownloadURL"]];
+            }
         }
         if (file) {
             file.resumeData = [[NSString alloc] initWithData:resumeData encoding:NSUTF8StringEncoding];
@@ -444,7 +427,8 @@ static HTTPSessionShare *_share = nil;
     
     if (file) {
         file.fileState = FileStopDownload;
-        [FileModelDbManager updateFile:file];
+        [FileModelDbManager insertFile:file];
+        [self startDownload];
     }
 }
 
@@ -487,6 +471,63 @@ static HTTPSessionShare *_share = nil;
 
 
 
+//自定义的下载类
+//- (void)beginDownloadFileWithFileModel:(FileModel *)file
+//{
+//    //获取文件缓存信息
+//    NSLog(@"22222222");
+//
+//    NSURLSessionDownloadTask *task = nil;
+//     __weak typeof(self) weak = self;
+//    if (file.resumeData.length > 0 && file.tempPath.length > 0) {
+//
+//        NSData *resumData = [file.resumeData dataUsingEncoding:NSUTF8StringEncoding];
+//
+//        //移动缓存文件到tmp目录，进行断点下载,此处不能用file的属性传入缓存路径名，程序第一次运行的时候目录不存在，会出现错误
+//        NSError *error ;
+//        [[NSFileManager defaultManager] moveItemAtPath:[[[FileManageShare fileManageShare] miaocaiRootTempCache] stringByAppendingPathComponent:file.tempFileName] toPath:[RootTemp stringByAppendingPathComponent:file.tempFileName] error:&error];
+//        task = [[ZBSessionDownloadManager ZBSessionDownloadManager] downloadTaskWithResumedata:resumData progressBlock:^(NSProgress *progress) {
+//            [weak addDownloadProgressWithProgress:progress file:file];
+//        } destinationBlock:^NSURL *(NSURL *delegateLocation, NSURLResponse *downloadTask) {
+//
+//            return [weak addDownloadDestinationBlockWithLocation:delegateLocation downloadTask:downloadTask file:file];
+//
+//        } completeHandler:^(NSURLResponse *downloadTask, NSError *delegateError) {
+//
+//            [weak addCompleteHandlerWithDownloadTask:downloadTask error:delegateError file:file];
+//
+//        }];
+//
+//
+//    } else {
+//        NSMutableURLRequest *request = [[AFHTTPRequestSerializer serializer] requestWithMethod:@"GET" URLString:file.fileUrl parameters:nil error:nil];
+//        task = [[ZBSessionDownloadManager ZBSessionDownloadManager] downloadTaskWithRequest:[request copy] progressBlock:^(NSProgress *progress) {
+//
+//            [weak addDownloadProgressWithProgress:progress file:file];
+//
+//        } destinationBlock:^NSURL *(NSURL *delegateLocation, NSURLResponse *downloadTask) {
+//
+//             return [weak addDownloadDestinationBlockWithLocation:delegateLocation downloadTask:downloadTask file:file];
+//
+//        } completeHandler:^(NSURLResponse *downloadTask, NSError *delegateError) {
+//
+//             [weak addCompleteHandlerWithDownloadTask:downloadTask error:delegateError file:file];
+//
+//        }];
+//
+//
+//
+//    }
+//
+//
+//    //创建下载任务
+//    if (task) {
+//
+//        [self addTask:task ForKey:file.fileUrl];
+//        [task resume];
+//    }
+//
+//}
 
 
 //结束

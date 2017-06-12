@@ -10,10 +10,18 @@
 #import "AFNetworking.h"
 #import "AFNetworkReachabilityManager.h"
 
+
+@protocol ZB_NetWorkShareDelegate <NSObject>
+
+- (void)backSessionDidCompletionWithSession:(NSString *)identifier;
+
+@end
+
 @interface ZB_NetWorkShare : NSObject
 
 @property (nonatomic, strong, readonly) AFHTTPSessionManager * _Nullable backSessionManager;
 @property (nonatomic, strong, readonly) AFNetworkReachabilityManager * _Nullable reachManager;
+@property (nonatomic, weak) id <ZB_NetWorkShareDelegate> backSessionCompletionDelegate;
 
 + (instancetype _Nullable )ZB_NetWorkShare;
 //后台任务处理

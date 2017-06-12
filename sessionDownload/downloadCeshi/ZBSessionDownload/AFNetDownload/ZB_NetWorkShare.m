@@ -77,6 +77,9 @@ static ZB_NetWorkShare *_instance;
 
 - (void)callCompletionHandlerForSession:(NSString *)identifier {
     
+    if ([self.backSessionCompletionDelegate respondsToSelector:@selector(backSessionDidCompletionWithSession:)]) {
+        [self.backSessionCompletionDelegate backSessionDidCompletionWithSession:identifier];
+    }
     void (^completionHandler)() = [self.completionHandlerDictionary objectForKey: identifier];
     if (completionHandler) {
         [self.completionHandlerDictionary removeObjectForKey: identifier];

@@ -7,6 +7,7 @@
 //
 
 #import "DatabaseQueueShare.h"
+#import "FileManageShare.h"
 
 
 @implementation DatabaseQueueShare
@@ -18,7 +19,7 @@ static DatabaseQueueShare *_databaseQueueShare = nil;
 //    static DatabaseQueueShare *_databaseQueueShare = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        _databaseQueueShare = [self databaseQueueWithPath:[self miaocaiwangDbPath]];
+        _databaseQueueShare = [self databaseQueueWithPath:[[FileManageShare fileManageShare] miaocaiRootDBCache]];
     });
     return _databaseQueueShare;
 }

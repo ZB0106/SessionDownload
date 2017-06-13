@@ -8,6 +8,7 @@
 
 #import "ViewController.h"
 #import "DownloadTableViewController.h"
+#import "FileManageShare.h"
 
 @interface ViewController ()
 
@@ -17,11 +18,19 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    // Do any additional setup after loading the view.
+    
 }
 
-- (IBAction)pushclick:(id)sender
+
+- (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event
 {
+    UIAlertController *aler = [UIAlertController alertControllerWithTitle:@"" message:[[NSString alloc] initWithContentsOfFile:[[[FileManageShare fileManageShare] miaocaiRootDownloadFileCache] stringByAppendingPathComponent:@"ceshi.strings"]  encoding:NSUTF8StringEncoding error:nil] preferredStyle:UIAlertControllerStyleActionSheet];
+    UIAlertAction *act = [UIAlertAction actionWithTitle:@"ok" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+        
+    }];
+    [aler addAction:act];
+    
+    [self presentViewController:aler animated:YES completion:nil];
     
 }
 - (void)didReceiveMemoryWarning {

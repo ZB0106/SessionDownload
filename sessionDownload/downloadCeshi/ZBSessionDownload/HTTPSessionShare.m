@@ -58,7 +58,7 @@ static HTTPSessionShare *_share = nil;
         
         //注册通知处理异常情况
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(sessionDownloadAplicationWillTerminate) name:UIApplicationWillTerminateNotification object:nil];
-        
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(appDidEnterBackground) name:UIApplicationDidEnterBackgroundNotification object:nil];
         
         _lock = [[NSLock alloc] init];
         _lock.name = @"ZBHTTPSessionShareTaskDict";
@@ -80,11 +80,9 @@ static HTTPSessionShare *_share = nil;
         [[ZB_NetWorkShare ZB_NetWorkShare].backSessionManager.session getTasksWithCompletionHandler:^(NSArray<NSURLSessionDataTask *> * _Nonnull dataTasks, NSArray<NSURLSessionUploadTask *> * _Nonnull uploadTasks, NSArray<NSURLSessionDownloadTask *> * _Nonnull downloadTasks) {
             
             for (NSURLSessionDownloadTask *task in downloadTasks) {
-                NSLog(@"%zd",task.state);
+                NSLog(@"%zd=============",task.state);
                 NSURLSessionDownloadTask *downTask = (NSURLSessionDownloadTask *)task;
                 
-                NSString *url = downTask.response.URL.absoluteString;
-                NSLog(@"%@",@(task.response.expectedContentLength));
 //                [downTask cancelByProducingResumeData:^(NSData * _Nullable resumeData) {
 //                    
 //                    [self handleResumeData:resumeData file:nil];
@@ -102,48 +100,50 @@ static HTTPSessionShare *_share = nil;
 //在后台下载完成以后的处理
 - (void)backSessionDidCompletionWithSession:(NSString *)identifier
 {
-    
-    NSString *path = [[FileManageShare fileManageShare] miaocairootAppleLocationCache];
-    NSString *desPath = [[FileManageShare fileManageShare] miaocaiRootDownloadFileCache];
-
-    NSArray *array = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:path error:nil];
-    for (NSString *str in array) {
-        [[NSFileManager defaultManager] moveItemAtURL:[NSURL fileURLWithPath:[path stringByAppendingPathComponent:str]] toURL:[NSURL fileURLWithPath:[desPath stringByAppendingPathComponent:str]] error:nil];
-    }
-
-    NSLog(@"backsessionhandler");
-    [[ZB_NetWorkShare ZB_NetWorkShare].backSessionManager.session getAllTasksWithCompletionHandler:^(NSArray<__kindof NSURLSessionTask *> * _Nonnull tasks) {
-        NSLog(@"1111111111");
+     dispatch_semaphore_t sem = dispatch_semaphore_create(1);
+     dispatch_semaphore_wait(sem, DISPATCH_TIME_FOREVER);
+    [[ZB_NetWorkShare ZB_NetWorkShare].backSessionManager.session getTasksWithCompletionHandler:^(NSArray<NSURLSessionDataTask *> * _Nonnull dataTasks, NSArray<NSURLSessionUploadTask *> * _Nonnull uploadTasks, NSArray<NSURLSessionDownloadTask *> * _Nonnull downloadTasks) {
+        
+        for (NSURLSessionDownloadTask *task in downloadTasks) {
+            
+            NSLog(@"%zd============= %@",task.state,task);
+            
+            dispatch_semaphore_signal(sem);
+        }
     }];
-    NSLog(@"44444444");
+
+     dispatch_semaphore_wait(sem, DISPATCH_TIME_FOREVER);
+}
+
+- (void)appDidEnterBackground
+{
     
 }
 - (void)sessionDownloadAplicationWillTerminate
 {
     //如果程序在后台下载直到完成期间一直没有初始化，会导致崩溃
     //操作：选择一个下载，然后退出程序，再运行程序以后进入后台，等后台下载完成以后再初始化session或者
-    //点击选择一个下载，然后退出程序，知道在后台下载完再次打开程序(大概是3分钟左右）
+    //点击选择一个下载，然后退出程序，直到在后台下载完再次打开程序(大概是3分钟左右）
+    
+    
     //程序意外退出时 保存断点信息
-//    NSLog(@"applicationDidEnterBackground--------");
-//    NSLog(@"%@=",[ZB_NetWorkShare ZB_NetWorkShare].backSessionManager.session);
-//    [[ZB_NetWorkShare ZB_NetWorkShare].backSessionManager.session getAllTasksWithCompletionHandler:^(NSArray<__kindof NSURLSessionTask *> * _Nonnull tasks) {
-//        NSLog(@"33241");
-//    }];
-//    [[ZB_NetWorkShare ZB_NetWorkShare].backSessionManager.session getTasksWithCompletionHandler:^(NSArray<NSURLSessionDataTask *> * _Nonnull dataTasks, NSArray<NSURLSessionUploadTask *> * _Nonnull uploadTasks, NSArray<NSURLSessionDownloadTask *> * _Nonnull downloadTasks) {
-//        NSLog(@"fadfafasfdas");
-//        for (NSURLSessionDownloadTask *task in downloadTasks) {
-//            NSLog(@"%zd",task.state);
-//            NSURLSessionDownloadTask *downTask = (NSURLSessionDownloadTask *)task;
-//            NSLog(@"applicationDidEnterBackground--------");
-//            [downTask cancelByProducingResumeData:^(NSData * _Nullable resumeData) {
-//                
-//                NSString *str = task.originalRequest.URL.absoluteString;
-//                FileModel *file = [FileModelDbManager getFileModeWithFilUrl:str];
-//                [self handleResumeData:resumeData file:file];
-//                
-//            }];
-//        }
-//    }];
+    //点击home进入后台，再双击杀死程序，此时resumedata不会空，task的state==3直接双击home退出app则resumedata为空，task的state==2；
+    NSDictionary *dict = _taskDict.copy;
+    NSLog(@"%@",dict);
+    dispatch_semaphore_t sem = dispatch_semaphore_create(1);
+    __weak typeof(self) weak = self;
+    for (NSURLSessionDownloadTask *task in _taskDict.allValues) {
+        dispatch_semaphore_wait(sem, DISPATCH_TIME_FOREVER);
+        NSLog(@"%zd+++++++++",task.state);
+        [task cancelByProducingResumeData:^(NSData * _Nullable resumeData) {
+            __strong typeof(weak) strongSelf = weak;
+            NSLog(@"%@",@(resumeData.length));
+            [strongSelf handleResumeData:resumeData file:nil];
+            NSLog(@"%zd+++++++++",task.state);
+            dispatch_semaphore_signal(sem);
+        }];
+    }
+    dispatch_semaphore_wait(sem, DISPATCH_TIME_FOREVER);
     
 }
 
@@ -215,7 +215,7 @@ static HTTPSessionShare *_share = nil;
                         [FileModelDbManager insertFile:file];
                     }
                   [task cancelByProducingResumeData:^(NSData * _Nullable resumeData) {
-                      
+                      NSLog(@"%zd",task.state);
                   }];
             }
         }
@@ -338,7 +338,6 @@ static HTTPSessionShare *_share = nil;
     //创建下载任务
     if (task) {
         [self addTask:task ForKey:file.fileUrl];
-        [self.taskDict setObject:task forKey:file.fileUrl];
         [task resume];
     }
 
@@ -379,7 +378,8 @@ static HTTPSessionShare *_share = nil;
 
 - (void)addCompleteHandlerWithDownloadTask:(NSURLResponse *)downloadTask error:(NSError *)error file:(FileModel *)file
 {
-    NSLog(@"completionerror");
+    NSURLSessionDownloadTask *task = [self taskForKey:file.fileUrl];
+    NSLog(@"completionerror====%@",@(task.state));
     if (error) {
         NSLog(@"%@",error);
         NSData *data = error.userInfo[NSURLSessionDownloadTaskResumeData];

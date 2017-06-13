@@ -8,6 +8,7 @@
 
 #import "DatabaseQueueShare.h"
 #import "FileManageShare.h"
+#import <sqlite3.h>
 
 
 @implementation DatabaseQueueShare
@@ -19,22 +20,9 @@ static DatabaseQueueShare *_databaseQueueShare = nil;
 //    static DatabaseQueueShare *_databaseQueueShare = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        _databaseQueueShare = [self databaseQueueWithPath:[[FileManageShare fileManageShare] miaocaiRootDBCache]];
+        _databaseQueueShare = [self databaseQueueWithPath:[[FileManageShare fileManageShare] miaocaiRootDBCache] flags:SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FILEPROTECTION_NONE];
     });
     return _databaseQueueShare;
-}
-
-+ (NSString *)miaocaiwangDbPath
-{
-    
-    NSString *fullPath = [NSString stringWithFormat:@"%@/%@/%@%@",RootDocumentPath,@"miaocai",@"Common",@"/DB/miaocaiWang.db"];
-    NSFileManager *fileManager = [NSFileManager defaultManager];
-    if(![fileManager fileExistsAtPath:fullPath])
-    {
-        [fileManager createDirectoryAtPath:[fullPath stringByDeletingLastPathComponent] withIntermediateDirectories:YES attributes:nil error:nil];
-    }
-    return fullPath;
-    
 }
 
 - (void)updateDBVersion

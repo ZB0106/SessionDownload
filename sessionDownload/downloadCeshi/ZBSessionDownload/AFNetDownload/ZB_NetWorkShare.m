@@ -52,7 +52,7 @@ static ZB_NetWorkShare *_instance;
     if (self = [super init]) {
         //普通session
         
-        NSString *identifier = @"com.yourcompany.appId.BackgroundSession";
+        NSString *identifier = @"com.miaocaiwang.downloadceshi.BackgroundSession";
         //session在每次重建时，会检查有没有没做完的任务，如果有session就会继续未完成的任务，这样很可能导致程序崩溃（在这个后台session里，每次意外退出app以后，再次重新创建后台session，都会默认开启上次崩溃前未执行完的任务，所以需要一个第三方的中介来对应一个任务
         NSURLSessionConfiguration* sessionConfig = [NSURLSessionConfiguration backgroundSessionConfigurationWithIdentifier:identifier];
         //后台任务session

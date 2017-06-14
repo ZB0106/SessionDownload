@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		07EE30631A6E93010504D18E /* libPods-downloadCeshi.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D5A4C3641C4EC1572DEBC165 /* libPods-downloadCeshi.a */; };
+		2103032C1EF0CF2000B84A9C /* reademe in Resources */ = {isa = PBXBuildFile; fileRef = 2103032B1EF0CF2000B84A9C /* reademe */; };
 		21306D7D1E7A3C1F000D7E46 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 21306D7C1E7A3C1F000D7E46 /* libsqlite3.tbd */; };
 		213E7BC41E794A0B00F9B7E2 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 213E7BC21E794A0B00F9B7E2 /* Main.storyboard */; };
 		213E7BC61E794A0B00F9B7E2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 213E7BC51E794A0B00F9B7E2 /* Assets.xcassets */; };
@@ -53,6 +54,7 @@
 
 /* Begin PBXFileReference section */
 		0C3A5A756D609957E99CEE33 /* Pods-downloadCeshi.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-downloadCeshi.release.xcconfig"; path = "Pods/Target Support Files/Pods-downloadCeshi/Pods-downloadCeshi.release.xcconfig"; sourceTree = "<group>"; };
+		2103032B1EF0CF2000B84A9C /* reademe */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = reademe; sourceTree = "<group>"; };
 		21306D7C1E7A3C1F000D7E46 /* libsqlite3.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libsqlite3.tbd; path = usr/lib/libsqlite3.tbd; sourceTree = SDKROOT; };
 		213E7BB61E794A0B00F9B7E2 /* downloadCeshi.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = downloadCeshi.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		213E7BC31E794A0B00F9B7E2 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
@@ -158,6 +160,7 @@
 				21AD9BB31EC152370007CDCD /* Common */,
 				21AD9BB51EC152370007CDCD /* CustomDownload */,
 				21AD9BBA1EC152370007CDCD /* DataBase */,
+				2103032B1EF0CF2000B84A9C /* reademe */,
 			);
 			path = ZBSessionDownload;
 			sourceTree = "<group>";
@@ -441,6 +444,7 @@
 			files = (
 				213E7BC91E794A0B00F9B7E2 /* LaunchScreen.storyboard in Resources */,
 				213E7BC61E794A0B00F9B7E2 /* Assets.xcassets in Resources */,
+				2103032C1EF0CF2000B84A9C /* reademe in Resources */,
 				213E7BC41E794A0B00F9B7E2 /* Main.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -718,6 +722,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				GCC_PREFIX_HEADER = "";
 				INFOPLIST_FILE = downloadCeshiTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.miaocaiwang.downloadCeshiTests;
@@ -730,6 +735,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				GCC_PREFIX_HEADER = "";
 				INFOPLIST_FILE = downloadCeshiTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.miaocaiwang.downloadCeshiTests;
@@ -741,6 +747,7 @@
 		213E7BEA1E794A0B00F9B7E2 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				GCC_PREFIX_HEADER = "";
 				INFOPLIST_FILE = downloadCeshiUITests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.miaocaiwang.downloadCeshiUITests;
@@ -752,6 +759,7 @@
 		213E7BEB1E794A0B00F9B7E2 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				GCC_PREFIX_HEADER = "";
 				INFOPLIST_FILE = downloadCeshiUITests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.miaocaiwang.downloadCeshiUITests;

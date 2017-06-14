@@ -77,21 +77,6 @@ static HTTPSessionShare *_share = nil;
         
         [ZB_NetWorkShare ZB_NetWorkShare].backSessionCompletionDelegate = self;
 
-        [[ZB_NetWorkShare ZB_NetWorkShare].backSessionManager.session getTasksWithCompletionHandler:^(NSArray<NSURLSessionDataTask *> * _Nonnull dataTasks, NSArray<NSURLSessionUploadTask *> * _Nonnull uploadTasks, NSArray<NSURLSessionDownloadTask *> * _Nonnull downloadTasks) {
-            
-            for (NSURLSessionDownloadTask *task in downloadTasks) {
-                NSLog(@"%zd=============",task.state);
-                NSURLSessionDownloadTask *downTask = (NSURLSessionDownloadTask *)task;
-                
-//                [downTask cancelByProducingResumeData:^(NSData * _Nullable resumeData) {
-//                    
-//                    [self handleResumeData:resumeData file:nil];
-//                    
-//                    
-//                }];
-            }
-        }];
-
     }
     return self;
 }
@@ -100,19 +85,7 @@ static HTTPSessionShare *_share = nil;
 //在后台下载完成以后的处理
 - (void)backSessionDidCompletionWithSession:(NSString *)identifier
 {
-     dispatch_semaphore_t sem = dispatch_semaphore_create(1);
-     dispatch_semaphore_wait(sem, DISPATCH_TIME_FOREVER);
-    [[ZB_NetWorkShare ZB_NetWorkShare].backSessionManager.session getTasksWithCompletionHandler:^(NSArray<NSURLSessionDataTask *> * _Nonnull dataTasks, NSArray<NSURLSessionUploadTask *> * _Nonnull uploadTasks, NSArray<NSURLSessionDownloadTask *> * _Nonnull downloadTasks) {
-        
-        for (NSURLSessionDownloadTask *task in downloadTasks) {
-            
-            NSLog(@"%zd============= %@",task.state,task);
-            
-            dispatch_semaphore_signal(sem);
-        }
-    }];
-
-     dispatch_semaphore_wait(sem, DISPATCH_TIME_FOREVER);
+    
 }
 
 - (void)appDidEnterBackground
@@ -121,30 +94,37 @@ static HTTPSessionShare *_share = nil;
 }
 - (void)sessionDownloadAplicationWillTerminate
 {
-    //如果程序在后台下载直到完成期间一直没有初始化，会导致崩溃
-    //操作：选择一个下载，然后退出程序，再运行程序以后进入后台，等后台下载完成以后再初始化session或者
-    //点击选择一个下载，然后退出程序，直到在后台下载完再次打开程序(大概是3分钟左右）
-    
-    
-    //程序意外退出时 保存断点信息
-    //点击home进入后台，再双击杀死程序，此时resumedata不会空，task的state==3直接双击home退出app则resumedata为空，task的state==2；
-    NSDictionary *dict = _taskDict.copy;
-    NSLog(@"%@",dict);
+        
     dispatch_semaphore_t sem = dispatch_semaphore_create(1);
     __weak typeof(self) weak = self;
     for (NSURLSessionDownloadTask *task in _taskDict.allValues) {
         dispatch_semaphore_wait(sem, DISPATCH_TIME_FOREVER);
-        NSLog(@"%zd+++++++++",task.state);
+        
         [task cancelByProducingResumeData:^(NSData * _Nullable resumeData) {
             __strong typeof(weak) strongSelf = weak;
-            NSLog(@"%@",@(resumeData.length));
+           
             [strongSelf handleResumeData:resumeData file:nil];
-            NSLog(@"%zd+++++++++",task.state);
+           
             dispatch_semaphore_signal(sem);
         }];
     }
     dispatch_semaphore_wait(sem, DISPATCH_TIME_FOREVER);
     
+}
+- (void)removeFileWithFileArray:(NSArray *)fileArray
+{
+    for (FileModel *pt in fileArray) {
+        NSURLSessionDownloadTask *task = [self taskForKey:pt.fileUrl];
+        if (task) {
+            [self removeTaskForKey:pt.fileUrl];
+            [task cancel];
+        }
+        [FileModelDbManager delFiles:pt];
+        //此处必须传入路径，而且不能传入数据库中存储的路径
+        [[NSFileManager defaultManager] removeItemAtPath:[[[FileManageShare fileManageShare] miaocaiRootDownloadFileCache] stringByAppendingPathComponent:pt.fileName] error:nil];
+        [self.downloadingList removeObjectsInArray:fileArray];
+        [self.diskFileList removeObjectsInArray:fileArray];
+    }
 }
 
 
@@ -454,21 +434,6 @@ static HTTPSessionShare *_share = nil;
     [self.lock unlock];
 
 }
-- (void)removeFileWithFileArray:(NSArray *)fileArray
-{
-    for (FileModel *pt in fileArray) {
-        NSURLSessionDownloadTask *task = [self taskForKey:pt.fileUrl];
-        if (task) {
-            [task cancel];
-            [self removeTaskForKey:pt.fileUrl];
-        }
-        [FileModelDbManager delFiles:pt];
-        [[NSFileManager defaultManager] removeItemAtPath:pt.filePath error:nil];
-        [self.downloadingList removeObjectsInArray:fileArray];
-        [self.diskFileList removeObjectsInArray:fileArray];
-    }
-}
-
 
 
 //自定义的下载类

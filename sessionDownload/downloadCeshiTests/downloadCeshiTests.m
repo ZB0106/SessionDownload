@@ -25,8 +25,11 @@
 }
 
 - (void)testExample {
-    // This is an example of a functional test case.
-    // Use XCTAssert and related functions to verify your tests produce the correct results.
+    NSTimeInterval time = [[NSDate date] timeIntervalSince1970];
+    time = time * 1000;
+    NSString *timeString = [NSString stringWithFormat:@"%@",@(time)];
+    NSRange range = [timeString rangeOfString:@"."];
+    NSLog(@"%@   %@",timeString,[timeString substringToIndex:range.location]);
 }
 
 - (void)testPerformanceExample {

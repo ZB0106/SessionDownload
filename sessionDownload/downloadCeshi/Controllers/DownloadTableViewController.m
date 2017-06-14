@@ -53,30 +53,9 @@
 {
     self.downloadObjectArr = @[].mutableCopy;
     [self.downloadObjectArr addObjectsFromArray:HttpShare.diskFileList];
-    [self.downloadObjectArr addObjectsFromArray:[HttpShare.downloadingList sortedArrayUsingDescriptors:@[[NSSortDescriptor sortDescriptorWithKey:@"fileState" ascending:NO]]]];
+    [self.downloadObjectArr addObjectsFromArray:HttpShare.downloadingList];
     
     [self.tableView reloadData];
-}
-
-- (NSMutableArray *)groupSortWithArray:(NSArray *)arry
-{
-    NSMutableArray *sameArray = [NSMutableArray array];
-    [sameArray addObject:arry[0]];
-    NSMutableArray *difArray = [NSMutableArray array];
-    for (int i = 0; i < arry.count - 1; i++) {
-        FileModel *file = arry[0];
-        FileModel *file2 = arry[i+1];
-        if (file.fileState == file2.fileState) {
-            [sameArray addObject:file2];
-        } else {
-            [difArray addObject:file2];
-        }
-    }
-    if (difArray.count > 0) {
-        
-        [self groupSortWithArray:difArray];
-    }
-    return sameArray;
 }
 
 - (void)didReceiveMemoryWarning {

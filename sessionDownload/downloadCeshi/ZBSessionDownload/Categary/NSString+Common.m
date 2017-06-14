@@ -25,4 +25,13 @@
     }
 }
 
++ (NSString *)getCurrentTimeStamp
+{
+    NSTimeInterval time = [[NSDate date] timeIntervalSince1970];
+    time = time * 1000;
+    NSString *timeString = [NSString stringWithFormat:@"%@",@(time)];
+    NSRange range = [timeString rangeOfString:@"."];
+    return [timeString substringToIndex:range.location];
+}
+
 @end

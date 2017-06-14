@@ -100,24 +100,12 @@ static HTTPSessionShare *_share = nil;
 //在后台下载完成以后的处理
 - (void)backSessionDidCompletionWithSession:(NSString *)identifier
 {
-     dispatch_semaphore_t sem = dispatch_semaphore_create(1);
-     dispatch_semaphore_wait(sem, DISPATCH_TIME_FOREVER);
-    [[ZB_NetWorkShare ZB_NetWorkShare].backSessionManager.session getTasksWithCompletionHandler:^(NSArray<NSURLSessionDataTask *> * _Nonnull dataTasks, NSArray<NSURLSessionUploadTask *> * _Nonnull uploadTasks, NSArray<NSURLSessionDownloadTask *> * _Nonnull downloadTasks) {
-        
-        for (NSURLSessionDownloadTask *task in downloadTasks) {
-            
-            NSLog(@"%zd============= %@",task.state,task);
-            
-            dispatch_semaphore_signal(sem);
-        }
-    }];
-
-     dispatch_semaphore_wait(sem, DISPATCH_TIME_FOREVER);
+    
 }
 
 - (void)appDidEnterBackground
 {
-    
+    NSLog(@"appDidEnterBackground");
 }
 - (void)sessionDownloadAplicationWillTerminate
 {
@@ -126,8 +114,9 @@ static HTTPSessionShare *_share = nil;
     //点击选择一个下载，然后退出程序，直到在后台下载完再次打开程序(大概是3分钟左右）
     
     
+    
     //程序意外退出时 保存断点信息
-    //点击home进入后台，再双击杀死程序，此时resumedata不会空，task的state==3直接双击home退出app则resumedata为空，task的state==2；
+    //点击home进入后台，再双击杀死程序，此时resumedata不为空，task的state==3直接双击home退出app则resumedata为空，task的state==2；
     NSDictionary *dict = _taskDict.copy;
     NSLog(@"%@",dict);
     dispatch_semaphore_t sem = dispatch_semaphore_create(1);
@@ -144,7 +133,6 @@ static HTTPSessionShare *_share = nil;
         }];
     }
     dispatch_semaphore_wait(sem, DISPATCH_TIME_FOREVER);
-    
 }
 
 

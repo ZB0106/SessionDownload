@@ -77,21 +77,6 @@ static HTTPSessionShare *_share = nil;
         
         [ZB_NetWorkShare ZB_NetWorkShare].backSessionCompletionDelegate = self;
 
-        [[ZB_NetWorkShare ZB_NetWorkShare].backSessionManager.session getTasksWithCompletionHandler:^(NSArray<NSURLSessionDataTask *> * _Nonnull dataTasks, NSArray<NSURLSessionUploadTask *> * _Nonnull uploadTasks, NSArray<NSURLSessionDownloadTask *> * _Nonnull downloadTasks) {
-            
-            for (NSURLSessionDownloadTask *task in downloadTasks) {
-                NSLog(@"%zd=============",task.state);
-                NSURLSessionDownloadTask *downTask = (NSURLSessionDownloadTask *)task;
-                
-//                [downTask cancelByProducingResumeData:^(NSData * _Nullable resumeData) {
-//                    
-//                    [self handleResumeData:resumeData file:nil];
-//                    
-//                    
-//                }];
-            }
-        }];
-
     }
     return self;
 }
@@ -123,16 +108,31 @@ static HTTPSessionShare *_share = nil;
     __weak typeof(self) weak = self;
     for (NSURLSessionDownloadTask *task in _taskDict.allValues) {
         dispatch_semaphore_wait(sem, DISPATCH_TIME_FOREVER);
-        NSLog(@"%zd+++++++++",task.state);
+        
         [task cancelByProducingResumeData:^(NSData * _Nullable resumeData) {
             __strong typeof(weak) strongSelf = weak;
-            NSLog(@"%@",@(resumeData.length));
+           
             [strongSelf handleResumeData:resumeData file:nil];
-            NSLog(@"%zd+++++++++",task.state);
+           
             dispatch_semaphore_signal(sem);
         }];
     }
     dispatch_semaphore_wait(sem, DISPATCH_TIME_FOREVER);
+}
+- (void)removeFileWithFileArray:(NSArray *)fileArray
+{
+    for (FileModel *pt in fileArray) {
+        NSURLSessionDownloadTask *task = [self taskForKey:pt.fileUrl];
+        if (task) {
+            [self removeTaskForKey:pt.fileUrl];
+            [task cancel];
+        }
+        [FileModelDbManager delFiles:pt];
+        //此处必须传入路径，而且不能传入数据库中存储的路径
+        [[NSFileManager defaultManager] removeItemAtPath:[[[FileManageShare fileManageShare] miaocaiRootDownloadFileCache] stringByAppendingPathComponent:pt.fileName] error:nil];
+        [self.downloadingList removeObjectsInArray:fileArray];
+        [self.diskFileList removeObjectsInArray:fileArray];
+    }
 }
 
 
@@ -442,21 +442,6 @@ static HTTPSessionShare *_share = nil;
     [self.lock unlock];
 
 }
-- (void)removeFileWithFileArray:(NSArray *)fileArray
-{
-    for (FileModel *pt in fileArray) {
-        NSURLSessionDownloadTask *task = [self taskForKey:pt.fileUrl];
-        if (task) {
-            [task cancel];
-            [self removeTaskForKey:pt.fileUrl];
-        }
-        [FileModelDbManager delFiles:pt];
-        [[NSFileManager defaultManager] removeItemAtPath:pt.filePath error:nil];
-        [self.downloadingList removeObjectsInArray:fileArray];
-        [self.diskFileList removeObjectsInArray:fileArray];
-    }
-}
-
 
 
 //自定义的下载类

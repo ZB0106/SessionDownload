@@ -12,5 +12,19 @@
 //程序意外退出时
 //点击home进入后台，再双击杀死程序，此时resumedata不会空，task的state==3直接双击home退出app则resumedata为空，task的state==2；
 
+//普通下载时ios系统会生成一个组件__NSCFLocalDownloadTask来完成下载
+"_afterDidReportProgressOnQueue" = "<ZBPropertyType: 0x610000029f20>";
+dataAckCompletion = "<ZBPropertyType: 0x610000029f20>";
+debugDescription = "<ZBPropertyType: 0x61000002c300>";
+description = "<ZBPropertyType: 0x61000002c300>";
+downloadFile = "<ZBPropertyType: 0x60000002cc80>";
+fileCompletion = "<ZBPropertyType: 0x610000029f20>";
+hash = "<ZBPropertyType: 0x60800002a2a0>";
+resumeCallback = "<ZBPropertyType: 0x610000029f20>";
+superclass = "<ZBPropertyType: 0x61800022e740>";
+
+//后台下载时ios系统会生成一个组件__NSCFBackgroundDownloadTask类来完成下载，个人认为这个下载组件是普通下载组件的子类
+其内部属性如下
+finished
 
 

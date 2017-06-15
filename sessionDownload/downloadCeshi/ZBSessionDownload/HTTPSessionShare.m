@@ -27,12 +27,14 @@
 
 
 
+//存储下载中的文件模型
+@property (nonatomic, strong) NSMutableArray *taskDowningList;
+
 //存储正在下载的文件模型
 @property (nonatomic, strong) NSMutableArray *downloadingList;
 //存储磁盘缓存的文件
 @property (nonatomic, strong) NSMutableArray *diskFileList;
 
-@property (nonatomic, strong) NSMutableDictionary *completionHandlerDictionary;
 
 @end
 
@@ -66,8 +68,7 @@ static HTTPSessionShare *_share = nil;
         _lock.name = @"ZBHTTPSessionShareTaskDict";
         
         _taskDict = [NSMutableDictionary dictionary];
-        //后台任务处理
-        _completionHandlerDictionary = [NSMutableDictionary dictionary];
+        _taskDowningList = [NSMutableArray array];
         _maxCount = 3;
         _downloadingList = [NSMutableArray array];
         _diskFileList = [NSMutableArray array];
@@ -83,76 +84,20 @@ static HTTPSessionShare *_share = nil;
 }
 
 
-//在后台下载完成以后的处理
-- (void)backSessionDidCompletionWithSession:(NSString *)identifier
-{
-    
-}
-
-- (void)appDidEnterBackground
-{
-    
-    
-}
-- (void)sessionDownloadAplicationWillTerminate
-{
-    //如果程序在后台下载直到完成期间一直没有初始化，会导致崩溃
-    //操作：选择一个下载，然后退出程序，再运行程序以后进入后台，等后台下载完成以后再初始化session或者
-    //点击选择一个下载，然后退出程序，直到在后台下载完再次打开程序(大概是3分钟左右）
-    
-    
-    
-    //程序意外退出时 保存断点信息
-    //点击home进入后台，再双击杀死程序，此时resumedata不为空，task的state==3直接双击home退出app则resumedata为空，task的state==2；
-    dispatch_semaphore_t sem = dispatch_semaphore_create(1);
-    for (NSURLSessionDownloadTask *task in _taskDict.allValues) {
-        dispatch_semaphore_wait(sem, DISPATCH_TIME_FOREVER);
-        
-        [task cancelByProducingResumeData:^(NSData * _Nullable resumeData) {
-        
-            dispatch_semaphore_signal(sem);
-        }];
-        [self saveResumeDataWithTask:task];
-    }
-    dispatch_semaphore_wait(sem, DISPATCH_TIME_FOREVER);
-    
-}
-
-
-- (void)saveResumeDataWithTask:(NSURLSessionDownloadTask *)task
-{
-    NSDictionary *dict = [NSClassFromString(@"__NSCFLocalDownloadTask") getPropertiesDict];
-    for (NSString *obj in dict.allKeys) {
-        if ([@"downloadFile" isEqualToString:obj]) {
-            id propertyValue = [task valueForKeyPath:obj];
-            NSDictionary *downDict = [[propertyValue class] getPropertiesDict];
-            for (NSString *downProperty in downDict.allKeys) {
-                if ([@"path" isEqualToString:downProperty]) {
-                    NSString *temFilePath = [propertyValue valueForKeyPath:downProperty];
-                    
-                    NSData *resumeData = [self reCreateResumeDataWithTask:task tmFilePath:temFilePath];
-                    [self handleResumeData:resumeData file:nil];
-                    break;
-                }
-            }
-            break;
-        }
-
-    }
-}
 
 - (void)removeFileWithFileArray:(NSArray *)fileArray
 {
     for (FileModel *pt in fileArray) {
         NSURLSessionDownloadTask *task = [self taskForKey:pt.fileUrl];
         if (task) {
-            [self removeTaskForKey:pt.fileUrl];
+            [self removeTaskForFile:pt];
             [task cancel];
         }
         [FileModelDbManager delFiles:pt];
         //此处必须传入路径，而且不能传入数据库中存储的路径
         [[NSFileManager defaultManager] removeItemAtPath:[[[FileManageShare fileManageShare] miaocaiRootDownloadFileCache] stringByAppendingPathComponent:pt.fileName] error:nil];
         [self.downloadingList removeObjectsInArray:fileArray];
+        [self.taskDowningList removeObjectsInArray:fileArray];
         [self.diskFileList removeObjectsInArray:fileArray];
     }
 }
@@ -198,6 +143,7 @@ static HTTPSessionShare *_share = nil;
 
 - (void)startDownload
 {
+    
     for (FileModel *file in self.downloadingList) {
         if (self.taskDict.count < self.maxCount) {
             if (file.fileState == FileWillDownload) {
@@ -219,7 +165,7 @@ static HTTPSessionShare *_share = nil;
             //此处未异步回掉self.downloadingcout--，不能及时生效，所以更换另外一种方式
             NSURLSessionDownloadTask *task = [self taskForKey:file.fileUrl];
                 if (task) {
-                    [self removeTaskForKey:file.fileUrl];
+                    [self removeTaskForFile:file];
                     if (file) {
                         file.fileState = FileStopDownload;
                         [FileModelDbManager insertFile:file];
@@ -285,6 +231,7 @@ static HTTPSessionShare *_share = nil;
     }
     
 
+    
     __block NSInteger tmIdx = 0;
     
     [self.downloadingList enumerateObjectsUsingBlock:^(FileModel *tm, NSUInteger idx, BOOL * _Nonnull stop) {
@@ -295,7 +242,13 @@ static HTTPSessionShare *_share = nil;
         }
 
     }];
-    //不进行下载排序
+    
+//    if (self.taskDowningList.count >= self.maxCount) {
+//        FileModel *file = self.taskDowningList.firstObject;
+//        file.fileState = FileStopDownload;
+//    }
+
+        //不进行下载排序
 //    [self.downloadingList removeObjectAtIndex:tmIdx];
 //    [self.downloadingList insertObject:file atIndex:0];
 
@@ -347,7 +300,7 @@ static HTTPSessionShare *_share = nil;
     }
     //创建下载任务
     if (task) {
-        [self addTask:task ForKey:file.fileUrl];
+        [self addTask:task forFile:file];
         [task resume];
     }
 
@@ -397,7 +350,7 @@ static HTTPSessionShare *_share = nil;
         [self handleResumeData:data file:file];
         
     }
-    [self removeTaskForKey:file.fileUrl];
+    [self removeTaskForFile:file];
     
     [self startDownload];
 }
@@ -446,13 +399,13 @@ static HTTPSessionShare *_share = nil;
     if (file) {
         file.fileState = FileStopDownload;
         [FileModelDbManager insertFile:file];
-        [self startDownload];
     }
 }
 
-- (void)removeTaskForKey:(NSString *)key
+- (void)removeTaskForFile:(FileModel *)file
 {   [self.lock lock];
-    [self.taskDict removeObjectForKey:key];
+    [self.taskDict removeObjectForKey:file.fileUrl];
+    [self.taskDowningList removeObject:file];
     [self.lock unlock];
 }
 
@@ -465,13 +418,97 @@ static HTTPSessionShare *_share = nil;
     return task;
 }
 
-- (void)addTask:(NSURLSessionTask *)task ForKey:(NSString *)key
+- (void)addTask:(NSURLSessionTask *)task forFile:(FileModel *)file
 {
     [self.lock lock];
-    [self.taskDict setObject:task forKey:key];
+    [self.taskDict setObject:task forKey:file.fileUrl];
+    [self.taskDowningList addObject:file];
     [self.lock unlock];
 
 }
+
+
+
+//在后台下载完成以后的处理
+- (void)backSessionDidCompletionWithSession:(NSString *)identifier
+{
+    
+}
+
+- (void)appDidEnterBackground
+{
+    
+    
+}
+
+//app意外退出处理
+- (void)sessionDownloadAplicationWillTerminate
+{
+    //如果程序在后台下载直到完成期间一直没有初始化，会导致崩溃
+    //操作：选择一个下载，然后退出程序，再运行程序以后进入后台，等后台下载完成以后再初始化session或者
+    //点击选择一个下载，然后退出程序，直到在后台下载完再次打开程序(大概是3分钟左右）
+    
+    
+    
+    //程序意外退出时 保存断点信息
+    //点击home进入后台，再双击杀死程序，此时resumedata不为空，task的state==3直接双击home退出app则resumedata为空，task的state==2；
+    dispatch_semaphore_t sem = dispatch_semaphore_create(1);
+    for (NSURLSessionDownloadTask *task in _taskDict.allValues) {
+        dispatch_semaphore_wait(sem, DISPATCH_TIME_FOREVER);
+        
+        [task cancelByProducingResumeData:^(NSData * _Nullable resumeData) {
+            
+            dispatch_semaphore_signal(sem);
+        }];
+        [self saveResumeDataWithTask:task];
+    }
+    dispatch_semaphore_wait(sem, DISPATCH_TIME_FOREVER);
+    
+}
+
+
+- (void)saveResumeDataWithTask:(NSURLSessionDownloadTask *)task
+{
+    NSDictionary *dict = [NSClassFromString(@"__NSCFLocalDownloadTask") getPropertiesDict];
+    for (NSString *obj in dict.allKeys) {
+        if ([@"downloadFile" isEqualToString:obj]) {
+            id propertyValue = [task valueForKeyPath:obj];
+            NSDictionary *downDict = [[propertyValue class] getPropertiesDict];
+            for (NSString *downProperty in downDict.allKeys) {
+                if ([@"path" isEqualToString:downProperty]) {
+                    NSString *temFilePath = [propertyValue valueForKeyPath:downProperty];
+                    
+                    NSData *resumeData = [self reCreateResumeDataWithTask:task tmFilePath:temFilePath];
+                    [self handleResumeData:resumeData file:nil];
+                    break;
+                }
+            }
+            break;
+        }
+        
+    }
+}
+
+- (NSData *)reCreateResumeDataWithTask:(NSURLSessionDownloadTask *)task tmFilePath:(NSString *)tmFilePath
+{
+    NSMutableDictionary *resumeDataDict = [NSMutableDictionary dictionary];
+    
+    NSMutableURLRequest *newResumeRequest = [task.currentRequest mutableCopy];
+    NSData *tmData = [NSData dataWithContentsOfFile:tmFilePath];
+    
+    [newResumeRequest addValue:[NSString stringWithFormat:@"bytes=%@-",@(tmData.length)] forHTTPHeaderField:@"Range"];
+    [resumeDataDict setObject:newResumeRequest.URL.absoluteString forKey:@"NSURLSessionDownloadURL"];
+    NSData *newResumeRequestData = [NSKeyedArchiver archivedDataWithRootObject:newResumeRequest];
+    NSData *oriData = [NSKeyedArchiver archivedDataWithRootObject:task.originalRequest];
+    [resumeDataDict setObject:@(tmData.length) forKey:@"NSURLSessionResumeBytesReceived"];
+    [resumeDataDict setObject:newResumeRequestData forKey:@"NSURLSessionResumeCurrentRequest"];
+    [resumeDataDict setObject:@(2) forKey:@"NSURLSessionResumeInfoVersion"];
+    [resumeDataDict setObject:oriData forKey:@"NSURLSessionResumeOriginalRequest"];
+    [resumeDataDict setObject:[tmFilePath lastPathComponent] forKey:@"NSURLSessionResumeInfoTempFileName"];
+    return [NSPropertyListSerialization dataWithPropertyList:resumeDataDict format:NSPropertyListXMLFormat_v1_0 options:0 error:nil];
+}
+
+
 
 
 //自定义的下载类
@@ -531,27 +568,6 @@ static HTTPSessionShare *_share = nil;
 //    }
 //
 //}
-
-
-//结束
-- (NSData *)reCreateResumeDataWithTask:(NSURLSessionDownloadTask *)task tmFilePath:(NSString *)tmFilePath
-{
-    NSMutableDictionary *resumeDataDict = [NSMutableDictionary dictionary];
-    
-    NSMutableURLRequest *newResumeRequest = [task.currentRequest mutableCopy];
-    NSData *tmData = [NSData dataWithContentsOfFile:tmFilePath];
-    
-    [newResumeRequest addValue:[NSString stringWithFormat:@"bytes=%@-",@(tmData.length)] forHTTPHeaderField:@"Range"];
-    [resumeDataDict setObject:newResumeRequest.URL.absoluteString forKey:@"NSURLSessionDownloadURL"];
-    NSData *newResumeRequestData = [NSKeyedArchiver archivedDataWithRootObject:newResumeRequest];
-    NSData *oriData = [NSKeyedArchiver archivedDataWithRootObject:task.originalRequest];
-    [resumeDataDict setObject:@(tmData.length) forKey:@"NSURLSessionResumeBytesReceived"];
-    [resumeDataDict setObject:newResumeRequestData forKey:@"NSURLSessionResumeCurrentRequest"];
-    [resumeDataDict setObject:@(2) forKey:@"NSURLSessionResumeInfoVersion"];
-    [resumeDataDict setObject:oriData forKey:@"NSURLSessionResumeOriginalRequest"];
-    [resumeDataDict setObject:[tmFilePath lastPathComponent] forKey:@"NSURLSessionResumeInfoTempFileName"];
-    return [NSPropertyListSerialization dataWithPropertyList:resumeDataDict format:NSPropertyListBinaryFormat_v1_0 options:0 error:nil];
-}
 
 
 @end

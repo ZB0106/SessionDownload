@@ -16,6 +16,8 @@
 #import "C_common.h"
 #import "ZB_NetWorkShare.h"
 #import "ZBSessionDownloadManager.h"
+#import <objc/runtime.h>
+#import "NSObject+ZB_Properties.h"
 
 @interface HTTPSessionShare ()<ZB_NetWorkShareDelegate>
 
@@ -74,7 +76,6 @@ static HTTPSessionShare *_share = nil;
         [_diskFileList addObjectsFromArray:[FileModelDbManager getAllDownloadedFile]];
         [_downloadingList addObjectsFromArray:[FileModelDbManager getAllNotCompletedFile]];
         
-        
         [ZB_NetWorkShare ZB_NetWorkShare].backSessionCompletionDelegate = self;
 
     }
@@ -90,7 +91,8 @@ static HTTPSessionShare *_share = nil;
 
 - (void)appDidEnterBackground
 {
-    NSLog(@"appDidEnterBackground");
+    
+    
 }
 - (void)sessionDownloadAplicationWillTerminate
 {
@@ -102,23 +104,43 @@ static HTTPSessionShare *_share = nil;
     
     //程序意外退出时 保存断点信息
     //点击home进入后台，再双击杀死程序，此时resumedata不为空，task的state==3直接双击home退出app则resumedata为空，task的state==2；
-    NSDictionary *dict = _taskDict.copy;
-    NSLog(@"%@",dict);
     dispatch_semaphore_t sem = dispatch_semaphore_create(1);
-    __weak typeof(self) weak = self;
     for (NSURLSessionDownloadTask *task in _taskDict.allValues) {
         dispatch_semaphore_wait(sem, DISPATCH_TIME_FOREVER);
         
         [task cancelByProducingResumeData:^(NSData * _Nullable resumeData) {
-            __strong typeof(weak) strongSelf = weak;
-           
-            [strongSelf handleResumeData:resumeData file:nil];
-           
+        
             dispatch_semaphore_signal(sem);
         }];
+        [self saveResumeDataWithTask:task];
     }
     dispatch_semaphore_wait(sem, DISPATCH_TIME_FOREVER);
+    
 }
+
+
+- (void)saveResumeDataWithTask:(NSURLSessionDownloadTask *)task
+{
+    NSDictionary *dict = [NSClassFromString(@"__NSCFLocalDownloadTask") getPropertiesDict];
+    for (NSString *obj in dict.allKeys) {
+        if ([@"downloadFile" isEqualToString:obj]) {
+            id propertyValue = [task valueForKeyPath:obj];
+            NSDictionary *downDict = [[propertyValue class] getPropertiesDict];
+            for (NSString *downProperty in downDict.allKeys) {
+                if ([@"path" isEqualToString:downProperty]) {
+                    NSString *temFilePath = [propertyValue valueForKeyPath:downProperty];
+                    
+                    NSData *resumeData = [self reCreateResumeDataWithTask:task tmFilePath:temFilePath];
+                    [self handleResumeData:resumeData file:nil];
+                    break;
+                }
+            }
+            break;
+        }
+
+    }
+}
+
 - (void)removeFileWithFileArray:(NSArray *)fileArray
 {
     for (FileModel *pt in fileArray) {
@@ -367,6 +389,7 @@ static HTTPSessionShare *_share = nil;
 - (void)addCompleteHandlerWithDownloadTask:(NSURLResponse *)downloadTask error:(NSError *)error file:(FileModel *)file
 {
     NSURLSessionDownloadTask *task = [self taskForKey:file.fileUrl];
+    
     NSLog(@"completionerror====%@",@(task.state));
     if (error) {
         NSLog(@"%@",error);
@@ -375,7 +398,7 @@ static HTTPSessionShare *_share = nil;
         
     }
     [self removeTaskForKey:file.fileUrl];
-//    [self.downloadinTaskCountDict removeObjectForKey:file.fileUrl];
+    
     [self startDownload];
 }
 
@@ -390,6 +413,13 @@ static HTTPSessionShare *_share = nil;
     if (resumeData.length > 0) {
         
         NSDictionary *tmdict = getResumeDictionary(resumeData);
+        
+//        NSURLRequest *request = [NSKeyedUnarchiver unarchiveObjectWithData:tmdict[@"NSURLSessionResumeCurrentRequest"]];
+//        NSLog(@"%@",[[NSString alloc] initWithData:tmdict[@"NSURLSessionResumeCurrentRequest"] encoding:NSUTF8StringEncoding]);
+//        NSLog(@"%@",tmdict[@"NSURLSessionResumeCurrentRequest"]);
+//        NSLog(@"%@===%@",request,[[request allHTTPHeaderFields] objectForKey:@"Range"]);
+//         NSURLRequest *request1 = [NSKeyedUnarchiver unarchiveObjectWithData:tmdict[@"NSURLSessionResumeOriginalRequest"]];
+//        NSLog(@"%@",[[request1 allHTTPHeaderFields] objectForKey:@"Range"]);
         if (!file) {
             for (FileModel *tm in _downloadingList) {
                 if ([tm.fileUrl isEqualToString:tmdict[@"NSURLSessionDownloadURL"]]) {
@@ -504,19 +534,22 @@ static HTTPSessionShare *_share = nil;
 
 
 //结束
-- (NSData *)reCreateResumeDataWithRequest:(NSURLRequest *)request tmfileName:(NSString *)tmfileName tmFilePath:(NSString *)tmFilePath
+- (NSData *)reCreateResumeDataWithTask:(NSURLSessionDownloadTask *)task tmFilePath:(NSString *)tmFilePath
 {
     NSMutableDictionary *resumeDataDict = [NSMutableDictionary dictionary];
     
-    NSMutableURLRequest *newResumeRequest = [request mutableCopy];
+    NSMutableURLRequest *newResumeRequest = [task.currentRequest mutableCopy];
     NSData *tmData = [NSData dataWithContentsOfFile:tmFilePath];
     
-    [newResumeRequest addValue:[NSString stringWithFormat:@"bytes=%ld-",tmData.length] forHTTPHeaderField:@"Range"];
-    [resumeDataDict setObject:request.URL.absoluteString forKey:@"NSURLSessionDownloadURL"];
-    NSData *newResumeRequestData = [NSKeyedArchiver archivedDataWithRootObject:newResumeRequest];[resumeDataDict setObject:[NSNumber numberWithInteger:tmData.length] forKey:@"NSURLSessionResumeBytesReceived"];
+    [newResumeRequest addValue:[NSString stringWithFormat:@"bytes=%@-",@(tmData.length)] forHTTPHeaderField:@"Range"];
+    [resumeDataDict setObject:newResumeRequest.URL.absoluteString forKey:@"NSURLSessionDownloadURL"];
+    NSData *newResumeRequestData = [NSKeyedArchiver archivedDataWithRootObject:newResumeRequest];
+    NSData *oriData = [NSKeyedArchiver archivedDataWithRootObject:task.originalRequest];
+    [resumeDataDict setObject:@(tmData.length) forKey:@"NSURLSessionResumeBytesReceived"];
     [resumeDataDict setObject:newResumeRequestData forKey:@"NSURLSessionResumeCurrentRequest"];
     [resumeDataDict setObject:@(2) forKey:@"NSURLSessionResumeInfoVersion"];
-    [resumeDataDict setObject:newResumeRequestData forKey:@"NSURLSessionResumeOriginalRequest"];[resumeDataDict setObject:[tmfileName lastPathComponent]forKey:@"NSURLSessionResumeInfoTempFileName"];
+    [resumeDataDict setObject:oriData forKey:@"NSURLSessionResumeOriginalRequest"];
+    [resumeDataDict setObject:[tmFilePath lastPathComponent] forKey:@"NSURLSessionResumeInfoTempFileName"];
     return [NSPropertyListSerialization dataWithPropertyList:resumeDataDict format:NSPropertyListBinaryFormat_v1_0 options:0 error:nil];
 }
 

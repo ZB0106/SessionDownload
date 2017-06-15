@@ -102,8 +102,7 @@ static HTTPSessionShare *_share = nil;
     
     //程序意外退出时 保存断点信息
     //点击home进入后台，再双击杀死程序，此时resumedata不为空，task的state==3直接双击home退出app则resumedata为空，task的state==2；
-    NSDictionary *dict = _taskDict.copy;
-    NSLog(@"%@",dict);
+
     dispatch_semaphore_t sem = dispatch_semaphore_create(1);
     __weak typeof(self) weak = self;
     for (NSURLSessionDownloadTask *task in _taskDict.allValues) {
@@ -203,7 +202,7 @@ static HTTPSessionShare *_share = nil;
                         [FileModelDbManager insertFile:file];
                     }
                   [task cancelByProducingResumeData:^(NSData * _Nullable resumeData) {
-                      NSLog(@"%zd",task.state);
+                     
                   }];
             }
         }

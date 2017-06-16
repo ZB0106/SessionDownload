@@ -30,8 +30,12 @@
 //存储下载中的文件模型
 @property (nonatomic, strong) NSMutableArray *taskDowningList;
 
-//存储正在下载的文件模型
+//存储正在下载的文件模型，供显示使用
 @property (nonatomic, strong) NSMutableArray *downloadingList;
+
+//存储正在下载的文件模型，供下载使用
+@property (nonatomic, strong) NSMutableArray *tmpDownlodingList;
+
 //存储磁盘缓存的文件
 @property (nonatomic, strong) NSMutableArray *diskFileList;
 
@@ -71,12 +75,13 @@ static HTTPSessionShare *_share = nil;
         _taskDowningList = [NSMutableArray array];
         _maxCount = 3;
         _downloadingList = [NSMutableArray array];
+        _tmpDownlodingList = [NSMutableArray array];
         _diskFileList = [NSMutableArray array];
         //更新文件状态，防止重新运行程序时，上次未下载完成的任务可能会开始下载
         [FileModelDbManager updateUnFinishedFileState];
         [_diskFileList addObjectsFromArray:[FileModelDbManager getAllDownloadedFile]];
         [_downloadingList addObjectsFromArray:[FileModelDbManager getAllNotCompletedFile]];
-        
+        [_tmpDownlodingList addObjectsFromArray:[FileModelDbManager getAllNotCompletedFile]];
         [ZB_NetWorkShare ZB_NetWorkShare].backSessionCompletionDelegate = self;
 
     }
@@ -84,7 +89,7 @@ static HTTPSessionShare *_share = nil;
 }
 
 
-
+//删除任务和文件
 - (void)removeFileWithFileArray:(NSArray *)fileArray
 {
     for (FileModel *pt in fileArray) {
@@ -97,6 +102,7 @@ static HTTPSessionShare *_share = nil;
         //此处必须传入路径，而且不能传入数据库中存储的路径
         [[NSFileManager defaultManager] removeItemAtPath:[[[FileManageShare fileManageShare] miaocaiRootDownloadFileCache] stringByAppendingPathComponent:pt.fileName] error:nil];
         [self.downloadingList removeObjectsInArray:fileArray];
+        [self.tmpDownlodingList removeObjectsInArray:fileArray];
         [self.taskDowningList removeObjectsInArray:fileArray];
         [self.diskFileList removeObjectsInArray:fileArray];
     }
@@ -130,6 +136,7 @@ static HTTPSessionShare *_share = nil;
     }
     [FileModelDbManager insertFile:model];
     [self.downloadingList addObject:model];
+    [self.tmpDownlodingList addObject:model];
     return YES;
 }
 
@@ -144,7 +151,7 @@ static HTTPSessionShare *_share = nil;
 - (void)startDownload
 {
     
-    for (FileModel *file in self.downloadingList) {
+    for (FileModel *file in self.tmpDownlodingList) {
         if (self.taskDict.count < self.maxCount) {
             if (file.fileState == FileWillDownload) {
                 file.fileState = FileDownloading;
@@ -187,7 +194,7 @@ static HTTPSessionShare *_share = nil;
 
 - (void)startAllTask
 {
-    for (FileModel *file in self.downloadingList) {
+    for (FileModel *file in self.tmpDownlodingList) {
         if (file.fileState != FileDownloaded) {
             file.fileState = FileWillDownload;
         }
@@ -197,7 +204,7 @@ static HTTPSessionShare *_share = nil;
 }
 - (void)stopAllTask
 {
-    for (FileModel *file in self.downloadingList) {
+    for (FileModel *file in self.tmpDownlodingList) {
         if (file.fileState == FileDownloading || file.fileState == FileWillDownload) {
             file.fileState = FileStopDownload;
         }
@@ -210,7 +217,7 @@ static HTTPSessionShare *_share = nil;
     if (file.fileUrl.length == 0) {
         return;
     }
-    for (FileModel *tm in self.downloadingList) {
+    for (FileModel *tm in self.tmpDownlodingList) {
         if ([file.fileUrl isEqualToString:tm.fileUrl]) {
             tm.fileState = FileStopDownload;
             
@@ -234,7 +241,7 @@ static HTTPSessionShare *_share = nil;
     
     __block NSInteger tmIdx = 0;
     
-    [self.downloadingList enumerateObjectsUsingBlock:^(FileModel *tm, NSUInteger idx, BOOL * _Nonnull stop) {
+    [self.tmpDownlodingList enumerateObjectsUsingBlock:^(FileModel *tm, NSUInteger idx, BOOL * _Nonnull stop) {
         if ([file.fileUrl isEqualToString:tm.fileUrl]) {
             tm.fileState = FileDownloading;
             tmIdx = idx;
@@ -243,14 +250,10 @@ static HTTPSessionShare *_share = nil;
 
     }];
     
-//    if (self.taskDowningList.count >= self.maxCount) {
-//        FileModel *file = self.taskDowningList.firstObject;
-//        file.fileState = FileStopDownload;
-//    }
 
-        //不进行下载排序
-//    [self.downloadingList removeObjectAtIndex:tmIdx];
-//    [self.downloadingList insertObject:file atIndex:0];
+    
+    [self.tmpDownlodingList removeObjectAtIndex:tmIdx];
+    [self.tmpDownlodingList insertObject:file atIndex:0];
 
     [self startDownload];
 }
@@ -332,6 +335,7 @@ static HTTPSessionShare *_share = nil;
     file.fileSize = [NSString stringWithFormat:@"%@",@(data.length)];
     
     [self.downloadingList removeObject:file];
+    [self.tmpDownlodingList removeObject:file];
     [self.diskFileList addObject:file];
     
     [FileModelDbManager insertFile:file];
@@ -367,12 +371,7 @@ static HTTPSessionShare *_share = nil;
         
         NSDictionary *tmdict = getResumeDictionary(resumeData);
         
-//        NSURLRequest *request = [NSKeyedUnarchiver unarchiveObjectWithData:tmdict[@"NSURLSessionResumeCurrentRequest"]];
-//        NSLog(@"%@",[[NSString alloc] initWithData:tmdict[@"NSURLSessionResumeCurrentRequest"] encoding:NSUTF8StringEncoding]);
-//        NSLog(@"%@",tmdict[@"NSURLSessionResumeCurrentRequest"]);
-//        NSLog(@"%@===%@",request,[[request allHTTPHeaderFields] objectForKey:@"Range"]);
-//         NSURLRequest *request1 = [NSKeyedUnarchiver unarchiveObjectWithData:tmdict[@"NSURLSessionResumeOriginalRequest"]];
-//        NSLog(@"%@",[[request1 allHTTPHeaderFields] objectForKey:@"Range"]);
+
         if (!file) {
             for (FileModel *tm in _downloadingList) {
                 if ([tm.fileUrl isEqualToString:tmdict[@"NSURLSessionDownloadURL"]]) {

@@ -37,5 +37,6 @@
 
 - (void)continueDownloadWithFile:(FileModel *)file;
 - (void)stopDownloadWithFile:(FileModel *)file;
+- (void)removeFileWithFileArray:(NSArray *)fileArray;
 
 @end

@@ -9,7 +9,7 @@
 #import <Foundation/Foundation.h>
 @class FileModel;
 
-@interface FileModelDbManager : NSObject
+@interface NSObject(FileDBManager)
 
 //插入文件
 +(BOOL)insertFile:(FileModel *)fileModel;

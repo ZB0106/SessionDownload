@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		07EE30631A6E93010504D18E /* libPods-downloadCeshi.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D5A4C3641C4EC1572DEBC165 /* libPods-downloadCeshi.a */; };
 		2103032C1EF0CF2000B84A9C /* reademe in Resources */ = {isa = PBXBuildFile; fileRef = 2103032B1EF0CF2000B84A9C /* reademe */; };
+		21208F601F05CFBE00A0ADE1 /* NSObject+ZB_File.m in Sources */ = {isa = PBXBuildFile; fileRef = 21208F5F1F05CFBE00A0ADE1 /* NSObject+ZB_File.m */; };
 		21306D7D1E7A3C1F000D7E46 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 21306D7C1E7A3C1F000D7E46 /* libsqlite3.tbd */; };
 		213E7BC41E794A0B00F9B7E2 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 213E7BC21E794A0B00F9B7E2 /* Main.storyboard */; };
 		213E7BC61E794A0B00F9B7E2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 213E7BC51E794A0B00F9B7E2 /* Assets.xcassets */; };
@@ -29,7 +30,7 @@
 		21AD9BC21EC152370007CDCD /* SessionDownloadDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 21AD9BB71EC152370007CDCD /* SessionDownloadDelegate.m */; };
 		21AD9BC31EC152370007CDCD /* ZBSessionDownloadManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 21AD9BB91EC152370007CDCD /* ZBSessionDownloadManager.m */; };
 		21AD9BC41EC152370007CDCD /* DatabaseQueueShare.m in Sources */ = {isa = PBXBuildFile; fileRef = 21AD9BBC1EC152370007CDCD /* DatabaseQueueShare.m */; };
-		21AD9BC51EC152370007CDCD /* FileModelDbManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 21AD9BBE1EC152370007CDCD /* FileModelDbManager.m */; };
+		21AD9BC51EC152370007CDCD /* NSObject+FileDBManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 21AD9BBE1EC152370007CDCD /* NSObject+FileDBManager.m */; };
 		21AD9BD91EC1528F0007CDCD /* DownloadTableViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 21AD9BC81EC1528F0007CDCD /* DownloadTableViewController.m */; };
 		21AD9BDA1EC1528F0007CDCD /* ListTableViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 21AD9BCA1EC1528F0007CDCD /* ListTableViewController.m */; };
 		21AD9BDB1EC1528F0007CDCD /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 21AD9BCC1EC1528F0007CDCD /* ViewController.m */; };
@@ -60,6 +61,8 @@
 /* Begin PBXFileReference section */
 		0C3A5A756D609957E99CEE33 /* Pods-downloadCeshi.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-downloadCeshi.release.xcconfig"; path = "Pods/Target Support Files/Pods-downloadCeshi/Pods-downloadCeshi.release.xcconfig"; sourceTree = "<group>"; };
 		2103032B1EF0CF2000B84A9C /* reademe */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = reademe; sourceTree = "<group>"; };
+		21208F5E1F05CFBE00A0ADE1 /* NSObject+ZB_File.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "NSObject+ZB_File.h"; path = "ZBProperty/NSObject+ZB_File.h"; sourceTree = "<group>"; };
+		21208F5F1F05CFBE00A0ADE1 /* NSObject+ZB_File.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = "NSObject+ZB_File.m"; path = "ZBProperty/NSObject+ZB_File.m"; sourceTree = "<group>"; };
 		21306D7C1E7A3C1F000D7E46 /* libsqlite3.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libsqlite3.tbd; path = usr/lib/libsqlite3.tbd; sourceTree = SDKROOT; };
 		213E7BB61E794A0B00F9B7E2 /* downloadCeshi.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = downloadCeshi.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		213E7BC31E794A0B00F9B7E2 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
@@ -103,8 +106,8 @@
 		21AD9BB91EC152370007CDCD /* ZBSessionDownloadManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZBSessionDownloadManager.m; sourceTree = "<group>"; };
 		21AD9BBB1EC152370007CDCD /* DatabaseQueueShare.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DatabaseQueueShare.h; sourceTree = "<group>"; };
 		21AD9BBC1EC152370007CDCD /* DatabaseQueueShare.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DatabaseQueueShare.m; sourceTree = "<group>"; };
-		21AD9BBD1EC152370007CDCD /* FileModelDbManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FileModelDbManager.h; sourceTree = "<group>"; };
-		21AD9BBE1EC152370007CDCD /* FileModelDbManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FileModelDbManager.m; sourceTree = "<group>"; };
+		21AD9BBD1EC152370007CDCD /* NSObject+FileDBManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSObject+FileDBManager.h"; sourceTree = "<group>"; };
+		21AD9BBE1EC152370007CDCD /* NSObject+FileDBManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSObject+FileDBManager.m"; sourceTree = "<group>"; };
 		21AD9BC71EC1528F0007CDCD /* DownloadTableViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DownloadTableViewController.h; sourceTree = "<group>"; };
 		21AD9BC81EC1528F0007CDCD /* DownloadTableViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DownloadTableViewController.m; sourceTree = "<group>"; };
 		21AD9BC91EC1528F0007CDCD /* ListTableViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ListTableViewController.h; sourceTree = "<group>"; };
@@ -165,6 +168,8 @@
 			isa = PBXGroup;
 			children = (
 				21556DA21EF216710014F38D /* ZBProperty */,
+				21208F5E1F05CFBE00A0ADE1 /* NSObject+ZB_File.h */,
+				21208F5F1F05CFBE00A0ADE1 /* NSObject+ZB_File.m */,
 				21AD9BA11EC152260007CDCD /* FileManageShare.h */,
 				21AD9BA21EC152260007CDCD /* FileManageShare.m */,
 				21AD9BA31EC152260007CDCD /* FileModel.h */,
@@ -317,8 +322,8 @@
 			children = (
 				21AD9BBB1EC152370007CDCD /* DatabaseQueueShare.h */,
 				21AD9BBC1EC152370007CDCD /* DatabaseQueueShare.m */,
-				21AD9BBD1EC152370007CDCD /* FileModelDbManager.h */,
-				21AD9BBE1EC152370007CDCD /* FileModelDbManager.m */,
+				21AD9BBD1EC152370007CDCD /* NSObject+FileDBManager.h */,
+				21AD9BBE1EC152370007CDCD /* NSObject+FileDBManager.m */,
 			);
 			path = DataBase;
 			sourceTree = "<group>";
@@ -556,7 +561,8 @@
 				21AD9BE01EC1528F0007CDCD /* ListCell.m in Sources */,
 				21AD9BDB1EC1528F0007CDCD /* ViewController.m in Sources */,
 				21AD9BBF1EC152370007CDCD /* ZB_NetWorkShare.m in Sources */,
-				21AD9BC51EC152370007CDCD /* FileModelDbManager.m in Sources */,
+				21208F601F05CFBE00A0ADE1 /* NSObject+ZB_File.m in Sources */,
+				21AD9BC51EC152370007CDCD /* NSObject+FileDBManager.m in Sources */,
 				21AD9BDA1EC1528F0007CDCD /* ListTableViewController.m in Sources */,
 				21AD9BC41EC152370007CDCD /* DatabaseQueueShare.m in Sources */,
 				21AD9BC21EC152370007CDCD /* SessionDownloadDelegate.m in Sources */,

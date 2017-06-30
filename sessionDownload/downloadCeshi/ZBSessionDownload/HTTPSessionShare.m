@@ -8,9 +8,8 @@
 
 #import "HTTPSessionShare.h"
 #import "AFNetworking.h"
-#import "FileModelDbManager.h"
+#import "NSObject+FileDBManager.h"
 #import "FileModel.h"
-#import "FileModelDbManager.h"
 #import "NSProgress+downSpeed.h"
 #import "NSString+Common.h"
 #import "C_common.h"
@@ -78,10 +77,10 @@ static HTTPSessionShare *_share = nil;
         _tmpDownlodingList = [NSMutableArray array];
         _diskFileList = [NSMutableArray array];
         //更新文件状态，防止重新运行程序时，上次未下载完成的任务可能会开始下载
-        [FileModelDbManager updateUnFinishedFileState];
-        [_diskFileList addObjectsFromArray:[FileModelDbManager getAllDownloadedFile]];
-        [_downloadingList addObjectsFromArray:[FileModelDbManager getAllNotCompletedFile]];
-        [_tmpDownlodingList addObjectsFromArray:[FileModelDbManager getAllNotCompletedFile]];
+        [NSObject updateUnFinishedFileState];
+        [_diskFileList addObjectsFromArray:[NSObject getAllDownloadedFile]];
+        [_downloadingList addObjectsFromArray:[NSObject getAllNotCompletedFile]];
+        [_tmpDownlodingList addObjectsFromArray:[NSObject getAllNotCompletedFile]];
         [ZB_NetWorkShare ZB_NetWorkShare].backSessionCompletionDelegate = self;
 
     }
@@ -98,7 +97,7 @@ static HTTPSessionShare *_share = nil;
             [self removeTaskForFile:pt];
             [task cancel];
         }
-        [FileModelDbManager delFiles:pt];
+        [NSObject delFiles:pt];
         //此处必须传入路径，而且不能传入数据库中存储的路径
         [[NSFileManager defaultManager] removeItemAtPath:[[[FileManageShare fileManageShare] miaocaiRootDownloadFileCache] stringByAppendingPathComponent:pt.fileName] error:nil];
         [self.downloadingList removeObjectsInArray:fileArray];
@@ -124,7 +123,7 @@ static HTTPSessionShare *_share = nil;
         return NO;
     }
     //判断文件是否已经存在
-    FileModel *downFile = [FileModelDbManager getFileModeWithFilUrl:model.fileUrl];
+    FileModel *downFile = [NSObject getFileModeWithFilUrl:model.fileUrl];
     if (downFile) {
         if (downFile.fileState == FileDownloaded) {
             NSLog(@"文件已经下载");
@@ -134,7 +133,7 @@ static HTTPSessionShare *_share = nil;
             return NO;
         }
     }
-    [FileModelDbManager insertFile:model];
+    [NSObject insertFile:model];
     [self.downloadingList addObject:model];
     [self.tmpDownlodingList addObject:model];
     return YES;
@@ -175,7 +174,7 @@ static HTTPSessionShare *_share = nil;
                     [self removeTaskForFile:file];
                     if (file) {
                         file.fileState = FileStopDownload;
-                        [FileModelDbManager insertFile:file];
+                        [NSObject insertFile:file];
                     }
                   [task cancelByProducingResumeData:^(NSData * _Nullable resumeData) {
                      
@@ -338,7 +337,7 @@ static HTTPSessionShare *_share = nil;
     [self.tmpDownlodingList removeObject:file];
     [self.diskFileList addObject:file];
     
-    [FileModelDbManager insertFile:file];
+    [NSObject insertFile:file];
     
     return destPath;
 }
@@ -379,7 +378,7 @@ static HTTPSessionShare *_share = nil;
                     break;
                 }
 
-//                file = [FileModelDbManager getFileModeWithFilUrl:tmdict[@"NSURLSessionDownloadURL"]];
+//                file = [NSObject getFileModeWithFilUrl:tmdict[@"NSURLSessionDownloadURL"]];
             }
         }
         if (file) {
@@ -397,7 +396,7 @@ static HTTPSessionShare *_share = nil;
     
     if (file) {
         file.fileState = FileStopDownload;
-        [FileModelDbManager insertFile:file];
+        [NSObject insertFile:file];
     }
 }
 

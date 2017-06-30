@@ -8,7 +8,7 @@
 
 #import "DownloadTableViewController.h"
 #import "FileModel.h"
-#import "FileModelDbManager.h"
+#import "NSObject+FileDBManager.h"
 #import "AFNetworking.h"
 #import "DownLoadCell.h"
 #import "DownlodedCell.h"

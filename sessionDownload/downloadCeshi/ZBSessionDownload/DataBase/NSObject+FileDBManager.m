@@ -6,12 +6,12 @@
 //  Copyright © 2017年 瞄财网. All rights reserved.
 //
 
-#import "FileModelDbManager.h"
+#import "NSObject+FileDBManager.h"
 #import "DatabaseQueueShare.h"
 #import "FileModel.h"
 
 
-@implementation FileModelDbManager
+@implementation NSObject(FileDBManager)
 
 + (BOOL)insertFile:(FileModel *)fileModel
 {
@@ -96,7 +96,7 @@
         FMResultSet *result = [db executeQuery:@"SELECT *FROM DOWNLOADFILE WHERE fileUrl = ?",fileUrl];
         if (result != nil) {
             while ([result next]) {
-                model = [FileModelDbManager fileModelWithResult:result];
+                model = [self fileModelWithResult:result];
             }
         }
         [result close];
@@ -129,7 +129,7 @@
        FMResultSet *result = [db executeQuery:@"SELECT * FROM DOWNLOADFILE"];
         if (result) {
             while ([result next]) {
-                FileModel *model = [FileModelDbManager fileModelWithResult:result];
+                FileModel *model = [self fileModelWithResult:result];
                 [modelArray addObject:model];
             }
         }
@@ -145,7 +145,7 @@
         FMResultSet *result = [db executeQuery:@"SELECT * FROM DOWNLOADFILE WHERE fileState = ?",@(FileDownloaded)];
         if (result) {
             while ([result next]) {
-                FileModel *model = [FileModelDbManager fileModelWithResult:result];
+                FileModel *model = [self fileModelWithResult:result];
                 [modelArray addObject:model];
             }
         }
@@ -162,7 +162,7 @@
         FMResultSet *result = [db executeQuery:@"SELECT * FROM DOWNLOADFILE WHERE fileState = ?",@(FileStopDownload)];
         if (result) {
             while ([result next]) {
-                FileModel *model = [FileModelDbManager fileModelWithResult:result];
+                FileModel *model = [self fileModelWithResult:result];
                 [modelArray addObject:model];
             }
         }
@@ -179,7 +179,7 @@
         FMResultSet *result = [db executeQuery:@"SELECT * FROM DOWNLOADFILE WHERE fileState = ? OR fileState = ?",@(FileWillDownload),@(FileDownloading)];
         if (result) {
             while ([result next]) {
-                FileModel *model = [FileModelDbManager fileModelWithResult:result];
+                FileModel *model = [self fileModelWithResult:result];
                 [modelArray addObject:model];
             }
         }
@@ -196,7 +196,7 @@
         FMResultSet *result = [db executeQuery:@"SELECT * FROM DOWNLOADFILE WHERE fileState <> ?",@(FileDownloaded)];
         if (result) {
             while ([result next]) {
-                FileModel *model = [FileModelDbManager fileModelWithResult:result];
+                FileModel *model = [self fileModelWithResult:result];
                 [modelArray addObject:model];
             }
         }

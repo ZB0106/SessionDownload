@@ -62,7 +62,7 @@ static FileManageShare *_share = nil;
 }
 - (NSString *)miaocaiRootDownloadFileCache
 {
-    NSString *path = [[self mioacaiRoot] stringByAppendingPathComponent:@"downloadFile"];
+    NSString *path = [[self miaocaiRootTempCache] stringByAppendingPathComponent:@"downloadTempFile"];
     NSFileManager *fileManager = [NSFileManager defaultManager];
     if(![fileManager fileExistsAtPath:path])
     {
@@ -71,6 +71,18 @@ static FileManageShare *_share = nil;
     
     return path;
 }
+- (NSString *)miaocaiRootDownloadFile
+{
+    NSString *path = [[self miaocaiRootTempCache] stringByAppendingPathComponent:@"downloadFile"];
+     NSFileManager *fileManager = [NSFileManager defaultManager];
+    if(![fileManager fileExistsAtPath:path])
+    {
+        [fileManager createDirectoryAtPath:path withIntermediateDirectories:YES attributes:nil error:nil];
+    }
+    
+    return path;
+}
+
 - (NSString *)miaocaiRootDBCache
 {
     NSString *path = [[self mioacaiRoot] stringByAppendingPathComponent:@"DB/miaocai.db"];

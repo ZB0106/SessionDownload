@@ -25,12 +25,19 @@
     }
 }
 
+@end
+
+@implementation NSString (ZB_timeStamp)
+
 + (NSString *)getCurrentTimeStamp
 {
     NSTimeInterval time = [[NSDate date] timeIntervalSince1970];
     time = time * 1000;
     NSString *timeString = [NSString stringWithFormat:@"%@",@(time)];
     NSRange range = [timeString rangeOfString:@"."];
+    if (range.location == NSNotFound) {
+        return timeString;
+    }
     return [timeString substringToIndex:range.location];
 }
 

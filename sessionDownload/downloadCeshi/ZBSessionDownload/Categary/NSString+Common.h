@@ -10,5 +10,11 @@
 
 @interface NSString (Common)
 + (NSString *)getFileSizeString:(int64_t )size;
+
+@end
+
+@interface NSString (ZB_timeStamp)
+
 + (NSString *)getCurrentTimeStamp;
+
 @end

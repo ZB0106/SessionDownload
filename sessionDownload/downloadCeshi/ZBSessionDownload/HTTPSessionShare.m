@@ -99,6 +99,9 @@ static HTTPSessionShare *_share = nil;
         }
         [NSObject delFiles:pt];
         //此处必须传入路径，而且不能传入数据库中存储的路径
+        //移除下载完成的文件
+        [[NSFileManager defaultManager] removeItemAtPath:[[[FileManageShare fileManageShare] miaocaiRootDownloadFile] stringByAppendingPathComponent:pt.fileName] error:nil];
+        //移除未完成的文件
         [[NSFileManager defaultManager] removeItemAtPath:[[[FileManageShare fileManageShare] miaocaiRootDownloadFileCache] stringByAppendingPathComponent:pt.fileName] error:nil];
         [self.downloadingList removeObjectsInArray:fileArray];
         [self.tmpDownlodingList removeObjectsInArray:fileArray];
@@ -264,7 +267,7 @@ static HTTPSessionShare *_share = nil;
     NSLog(@"22222222");
     NSURLSessionDownloadTask *task = nil;
     __weak typeof(self) weak = self;
-    NSLog(@"%@",[[FileManageShare fileManageShare] miaocaiRootTempCache]);
+    NSLog(@"%@",[[FileManageShare fileManageShare] miaocaiRootDownloadFileCache]);
     if (file.resumeData.length > 0 && file.tempPath.length > 0) {
         
         NSData *resumData = [file.resumeData dataUsingEncoding:NSUTF8StringEncoding];
@@ -272,7 +275,7 @@ static HTTPSessionShare *_share = nil;
         //移动缓存文件到tmp目录，进行断点下载,此处不能用file的属性传入缓存路径名，程序第一次运行的时候目录不存在，会出现错误
         
         NSError *error ;
-        [[NSFileManager defaultManager] moveItemAtPath:[[[FileManageShare fileManageShare] miaocaiRootTempCache] stringByAppendingPathComponent:file.tempFileName] toPath:[RootTemp stringByAppendingPathComponent:file.tempFileName] error:&error];
+        [[NSFileManager defaultManager] moveItemAtPath:[[[FileManageShare fileManageShare] miaocaiRootDownloadFileCache] stringByAppendingPathComponent:file.tempFileName] toPath:[RootTemp stringByAppendingPathComponent:file.tempFileName] error:&error];
         task = [[ZB_NetWorkShare ZB_NetWorkShare] downloadTaskWithResumeData:resumData progress:^(NSProgress *downloadProgress) {
             __strong typeof(weak) strongSelf = weak;
             [strongSelf addDownloadProgressWithProgress:downloadProgress file:file];
@@ -325,9 +328,11 @@ static HTTPSessionShare *_share = nil;
 - (NSURL *)addDownloadDestinationBlockWithLocation:(NSURL *)location downloadTask:(NSURLResponse *)downloadTask file:(FileModel *)file
 {
     NSLog(@"didfinishtourl   ===%@",location.path);
-    NSURL *destPath = [NSURL fileURLWithPath:[RootCache stringByAppendingPathComponent:downloadTask.suggestedFilename]];
+    //重新生成文件名，防止文件重名
+    NSString *fileName = [[NSString getCurrentTimeStamp] stringByAppendingFormat:@"_%@",downloadTask.suggestedFilename];
+    NSURL *destPath = [NSURL fileURLWithPath:[[[FileManageShare fileManageShare] miaocaiRootDownloadFile] stringByAppendingPathComponent:fileName]];
     NSData *data = [[NSFileManager defaultManager] contentsAtPath:location.path];
-    file.filePath = destPath.path;
+    file.filePath = fileName;
     file.fileState = FileDownloaded;
     //下载完成时需要设置文件的大小，因为设置了每隔1s更新一次，最后一次有可能会没有更新
     file.fileReceivedSize = [NSString stringWithFormat:@"%@",@(data.length)];
@@ -386,7 +391,7 @@ static HTTPSessionShare *_share = nil;
             
             NSString *tmFileName = [NSString stringWithFormat:@"%@",[tmdict objectForKey:@"NSURLSessionResumeInfoTempFileName"]];
             file.tempFileName = tmFileName;
-            file.tempPath = [[[FileManageShare fileManageShare] miaocaiRootTempCache] stringByAppendingPathComponent:file.tempFileName];
+            file.tempPath = [[[FileManageShare fileManageShare] miaocaiRootDownloadFileCache] stringByAppendingPathComponent:file.tempFileName];
             NSData *data = [[NSFileManager defaultManager] contentsAtPath:[RootTemp stringByAppendingPathComponent:file.tempFileName]];
             file.fileReceivedSize = [NSString stringWithFormat:@"%@",@(data.length)];
             NSError *error;
